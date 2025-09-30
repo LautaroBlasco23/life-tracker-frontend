@@ -16,10 +16,11 @@ help:
 	@echo "  logs            - View container logs"
 	@echo "  shell           - Open shell in running container"
 
-# Build production image
 .PHONY: build-prod
 build-prod:
-	docker build -t $(APP_NAME):$(DOCKER_TAG) .
+	docker build \
+		--build-arg NEXT_PUBLIC_API_URL=https://api-lifetracker.lautaroblasco.com/api \
+		-t $(APP_NAME):$(DOCKER_TAG) .
 
 # Build development image
 .PHONY: build-dev
@@ -88,3 +89,12 @@ restart: stop run-container
 # Restart dev container
 .PHONY: restart-dev
 restart-dev: stop run-dev
+
+.PHONY: rebuild
+rebuild: stop
+	docker build --no-cache -t $(APP_NAME):$(DOCKER_TAG) .
+	docker run -d \
+		--name $(APP_NAME) \
+		-p $(PORT):3000 \
+		$(APP_NAME):$(DOCKER_TAG)
+	@echo "Container running at http://localhost:$(PORT)"
