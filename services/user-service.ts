@@ -8,7 +8,7 @@ interface UpdateUserRequest {
 }
 
 class UserService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-lifetracker.lautaroblasco.com/api'
 
   async getUserById(id: number): Promise<User | null> {
     const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/${id}`)

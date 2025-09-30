@@ -20,7 +20,7 @@ interface RefreshRequest {
 }
 
 class AuthService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-lifetracker.lautaroblasco.com/api'
   private currentUser: User | null = null
   private accessToken: string | null = null
   private refreshToken: string | null = null

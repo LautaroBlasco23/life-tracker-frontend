@@ -33,7 +33,7 @@ interface BackendSingleResponse<T> {
 }
 
 class ActivityService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-lifetracker.lautaroblasco.com/api'
 
   async getActivitiesByUserId(): Promise<Activity[]> {
     const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/activities`)
