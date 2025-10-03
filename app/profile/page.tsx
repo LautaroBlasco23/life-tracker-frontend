@@ -15,7 +15,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { authService } from "@/services/auth-service"
 import { userService } from "@/services/user-service"
 import { useToast } from "@/hooks/use-toast"
-import type { User } from "@/types"
+import type { User } from "@/types/user"
 import { LogOut } from "lucide-react"
 
 export default function ProfilePage() {
@@ -46,7 +46,7 @@ export default function ProfilePage() {
 
     setSaving(true)
     try {
-      const updatedUser = await userService.updateUser(user.id, {
+      const updatedUser = await userService.updateUser({
         firstName,
         lastName,
         email,
@@ -73,8 +73,8 @@ export default function ProfilePage() {
 
     setIsUploadingImage(true)
     try {
-      const imageUrl = await userService.uploadProfilePicture(user.id, file)
-      const updatedUser = await userService.updateUser(user.id, {
+      const imageUrl = await userService.uploadProfilePicture(file)
+      const updatedUser = await userService.updateUser({
         profilePicUrl: imageUrl,
       })
       setUser(updatedUser)
