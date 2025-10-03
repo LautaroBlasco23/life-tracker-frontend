@@ -1,10 +1,11 @@
-import type { User } from "@/types"
+import type { User } from "@/types/user"
 import { authService } from "./auth-service"
 
 interface UpdateUserRequest {
   firstName?: string
   lastName?: string
   profilePicUrl?: string
+  email?: string
 }
 
 class UserService {
@@ -51,11 +52,11 @@ class UserService {
     const formData = new FormData()
     formData.append('file', file)
 
-    // Note: You'll need to implement file upload endpoint in your Go backend
+    // TODO: fix this after implementing file upload in backend.
     const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/upload-profile-pic`, {
       method: 'POST',
       body: formData,
-      headers: {}, // Don't set Content-Type for FormData
+      headers: {},
     })
 
     if (!response.ok) {
