@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Activity, User } from "lucide-react"
+import { Activity, User, Wallet } from "lucide-react"
 
 export function Navigation() {
   const pathname = usePathname()
@@ -13,6 +13,12 @@ export function Navigation() {
       icon: Activity,
       label: "Activities",
       isActive: pathname === "/activities",
+    },
+    {
+      href: "/finance",
+      icon: Wallet,
+      label: "Finance",
+      isActive: pathname === "/finance",
     },
     {
       href: "/profile",
@@ -31,11 +37,10 @@ export function Navigation() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-                item.isActive
+              className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-colors ${item.isActive
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+                }`}
             >
               <Icon className="h-5 w-5" />
               <span className="text-xs font-medium">{item.label}</span>
