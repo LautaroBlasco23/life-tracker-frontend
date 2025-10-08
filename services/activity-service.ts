@@ -6,8 +6,8 @@ interface CreateActivityPayload {
   description: string
   completionAmount: number
   frequency: string
-  dayFrequency?: string // JSON string in backend
-  dayTime: string // Added dayTime field
+  dayFrequency?: string
+  dayTime: string
 }
 
 interface UpdateActivityPayload {
@@ -16,11 +16,10 @@ interface UpdateActivityPayload {
   completionAmount?: number
   frequency?: string
   dayFrequency?: string
-  dayTime?: string // Added dayTime field
+  dayTime?: string
   isActive?: boolean
 }
 
-// Backend response structure
 interface BackendListResponse<T> {
   count: number
   data: T[] | null
@@ -43,8 +42,17 @@ class ActivityService {
     }
 
     const backendResponse: BackendListResponse<Activity> = await response.json()
+    return backendResponse.data || []
+  }
 
-    // Return empty array if data is null, otherwise return the data array
+  async getTodayActivities(): Promise<Activity[]> {
+    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/activities/today`)
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch today\'s activities')
+    }
+
+    const backendResponse: BackendListResponse<Activity> = await response.json()
     return backendResponse.data || []
   }
 
@@ -60,14 +68,13 @@ class ActivityService {
   }
 
   async createActivity(activityData: CreateActivityRequest): Promise<Activity> {
-    // Convert dayFrequency array to JSON string if present
     const payload: CreateActivityPayload = {
       title: activityData.title,
       description: activityData.description,
       completionAmount: activityData.completionAmount,
       frequency: activityData.frequency,
       dayFrequency: activityData.dayFrequency ? JSON.stringify(activityData.dayFrequency) : undefined,
-      dayTime: activityData.dayTime, // Include dayTime
+      dayTime: activityData.dayTime,
     }
 
     const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/activities`, {
@@ -84,11 +91,10 @@ class ActivityService {
   }
 
   async updateActivity(id: number, updates: UpdateActivityRequest): Promise<Activity> {
-    // Convert dayFrequency array to JSON string if present
     const payload: UpdateActivityPayload = {
       ...updates,
       dayFrequency: updates.dayFrequency ? JSON.stringify(updates.dayFrequency) : undefined,
-      dayTime: updates.dayTime, // Include dayTime
+      dayTime: updates.dayTime,
     }
 
     const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/activities/${id}`, {
@@ -160,13 +166,11 @@ class ActivityService {
     }
   }
 
-  // Legacy method - maps to recordActivity for backward compatibility
   async incrementActivityProgress(activityId: number): Promise<Activity> {
     await this.recordActivity(activityId)
     return this.getActivity(activityId)
   }
 
-  // Helper method to parse dayFrequency from JSON string to array
   parseDayFrequency(dayFrequency?: string): DayOfWeek[] {
     if (!dayFrequency) return []
     try {

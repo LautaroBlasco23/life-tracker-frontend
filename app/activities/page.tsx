@@ -53,7 +53,7 @@ export default function ActivitiesPage() {
   const loadActivities = async () => {
     try {
       setIsLoading(true)
-      const userActivities = await activityService.getActivitiesByUserId()
+      const userActivities = await activityService.getTodayActivities()
       setActivities(userActivities)
     } catch (error) {
       console.error('Failed to load activities:', error)
@@ -133,8 +133,8 @@ export default function ActivitiesPage() {
         <div className="max-w-4xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-semibold text-foreground mb-2">Activities</h1>
-              <p className="text-muted-foreground">Track and manage your daily activities by time of day</p>
+              <h1 className="text-3xl font-semibold text-foreground mb-2">Today's Activities</h1>
+              <p className="text-muted-foreground">Track and complete your activities for today</p>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -152,8 +152,8 @@ export default function ActivitiesPage() {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                     <Plus className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-medium text-foreground mb-2">No activities yet</h3>
-                  <p>Get started by creating your first activity to track.</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">No activities for today</h3>
+                  <p>Create activities to see them appear here on their scheduled days.</p>
                 </div>
                 <Button onClick={() => setShowCreateModal(true)}>Create your first activity</Button>
               </CardContent>
