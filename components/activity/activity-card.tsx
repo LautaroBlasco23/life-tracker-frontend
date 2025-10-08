@@ -8,9 +8,6 @@ import {
   MoreHorizontal,
   Trash2,
   Edit,
-  Calendar,
-  Target,
-  Plus,
   Undo2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -25,7 +22,6 @@ interface ActivityCardProps {
   onProgressUpdate: (updatedActivity: Activity) => void
 }
 
-// Custom Dropdown Component
 const CustomDropdown = ({ children, trigger, align = "end" }: {
   children: React.ReactNode
   trigger: React.ReactNode
@@ -143,7 +139,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
   const handleRevertCompletion = async () => {
     setIsReverting(true)
 
-    // Optimistically update the UI
     const newCompletions = Math.max(0, activity.todayCompletions - 1)
     const optimisticActivity: Activity = {
       ...activity,
@@ -153,7 +148,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
     onProgressUpdate(optimisticActivity)
 
     try {
-      // Revert the activity completion
       await activityService.revertLastCompletion(activity.id)
 
       toast({
@@ -162,7 +156,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
         variant: "default",
       })
     } catch (error) {
-      // Revert the optimistic update on error
       onProgressUpdate(activity)
 
       toast({
@@ -176,7 +169,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
   }
 
   const handleCardClick = async (e: React.MouseEvent) => {
-    // More specific check for dropdown elements
     const target = e.target as HTMLElement
     const isDropdownElement = target.closest('[data-dropdown]') ||
       target.closest('button') ||
@@ -201,7 +193,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
   const handleRecordCompletion = async () => {
     setIsRecording(true)
 
-    // Optimistically update the UI
     const optimisticActivity: Activity = {
       ...activity,
       todayCompletions: activity.todayCompletions + 1,
@@ -210,7 +201,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
     onProgressUpdate(optimisticActivity)
 
     try {
-      // Record the activity completion
       await activityService.recordActivity(activity.id)
 
       const isNowCompleted = optimisticActivity.isCompletedToday
@@ -222,7 +212,6 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
         variant: "default",
       })
     } catch (error) {
-      // Revert the optimistic update on error
       onProgressUpdate(activity)
 
       toast({
@@ -235,33 +224,7 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
     }
   }
 
-  const getFrequencyBadgeVariant = (frequency: string) => {
-    switch (frequency) {
-      case "daily":
-        return "default"
-      case "weekly":
-        return "secondary"
-      case "monthly":
-        return "outline"
-      case "oneTime":
-        return "destructive"
-      default:
-        return "default"
-    }
-  }
 
-  const getDayTimeBadgeVariant = (dayTime: string) => {
-    switch (dayTime) {
-      case "morning":
-        return "default"
-      case "afternoon":
-        return "secondary"
-      case "evening":
-        return "outline"
-      default:
-        return "default"
-    }
-  }
 
   const formatDayFrequency = (dayFrequency?: string) => {
     if (!dayFrequency) return null
@@ -273,23 +236,15 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
-
   const progressPercentage = (activity.todayCompletions / activity.completionAmount) * 100
   const isCompleted = activity.isCompletedToday
 
   return (
     <>
       <Card
-        className={`transition-all duration-200 ${isCompleted
-          ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-          : "hover:shadow-md cursor-pointer hover:scale-[1.02]"
+        className={`bg-muted/30 transition-all duration-200 ${isCompleted
+          ? "border-green-500/50 bg-green-500/10"
+          : "hover:shadow-md cursor-pointer hover:scale-[1.02] hover:bg-muted/50"
           } ${isRecording || isReverting ? "opacity-70" : ""}`}
         onClick={handleCardClick}
       >
@@ -298,14 +253,14 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <CardTitle
-                  className={`text-lg font-medium ${isCompleted ? "text-green-700 dark:text-green-300" : "text-foreground"}`}
+                  className={`text-lg font-medium ${isCompleted ? "text-green-600 dark:text-green-400" : "text-foreground"}`}
                 >
                   {activity.title}
                 </CardTitle>
                 {isCompleted && (
                   <Badge
                     variant="default"
-                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    className="bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/50"
                   >
                     Complete
                   </Badge>
@@ -345,40 +300,24 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="mb-4">
+          <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Today's Progress: {activity.todayCompletions}/{activity.completionAmount}
+              <span className="text-sm text-muted-foreground">
+                {activity.todayCompletions}/{activity.completionAmount}
               </span>
               {!isCompleted && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Plus className="h-3 w-3" />
-                  <span>Click to record</span>
-                </div>
+                <span className="text-xs text-muted-foreground">Tap to complete</span>
               )}
             </div>
             <Progress value={progressPercentage} className="h-2" />
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Target className="h-4 w-4" />
-                <span>{activity.completionAmount}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>Created {formatDate(activity.createdAt)}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={getDayTimeBadgeVariant(activity.dayTime)}>{activity.dayTime}</Badge>
-              <Badge variant={getFrequencyBadgeVariant(activity.frequency)}>{activity.frequency}</Badge>
-              {activity.frequency === "weekly" && formatDayFrequency(activity.dayFrequency) && (
-                <Badge variant="outline" className="text-xs">
-                  {formatDayFrequency(activity.dayFrequency)}
-                </Badge>
-              )}
-            </div>
+          <div className="flex items-center justify-end gap-2">
+            <Badge variant="outline">{activity.frequency}</Badge>
+            {activity.frequency === "weekly" && formatDayFrequency(activity.dayFrequency) && (
+              <Badge variant="outline" className="text-xs">
+                {formatDayFrequency(activity.dayFrequency)}
+              </Badge>
+            )}
           </div>
         </CardContent>
       </Card>
