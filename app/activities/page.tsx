@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { AuthGuard } from "@/components/auth-guard"
 import { Navigation } from "@/components/navigation"
 import { ActivityCard } from "@/components/activity/activity-card"
@@ -19,16 +19,22 @@ const CATEGORY_CONFIG = {
     label: "Morning",
     icon: Sun,
     description: "Start your day right",
+    accentColor: "border-amber-400",
+    iconColor: "text-amber-500",
   },
   afternoon: {
     label: "Afternoon",
     icon: CloudSun,
     description: "Keep the momentum going",
+    accentColor: "border-sky-400",
+    iconColor: "text-sky-500",
   },
   evening: {
     label: "Evening",
     icon: Moon,
     description: "Wind down and reflect",
+    accentColor: "border-indigo-400",
+    iconColor: "text-indigo-500",
   },
 } as const
 
@@ -98,7 +104,6 @@ export default function ActivitiesPage() {
     setActivities(activities.map((activity) => (activity.id === updatedActivity.id ? updatedActivity : activity)))
   }
 
-  // Group activities by dayTime (from backend)
   const activitiesByCategory = activities.reduce(
     (acc, activity) => {
       const dayTime = activity.dayTime
@@ -164,24 +169,16 @@ export default function ActivitiesPage() {
 
                 return (
                   <div key={dayTime} className="space-y-4">
-                    <Card className="bg-muted/30">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-3 text-xl">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <IconComponent className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <div className="text-foreground">{config.label}</div>
-                            <div className="text-sm font-normal text-muted-foreground">{config.description}</div>
-                          </div>
-                          <div className="ml-auto">
-                            <span className="text-sm text-muted-foreground">
-                              {categoryActivities.length} {categoryActivities.length === 1 ? "activity" : "activities"}
-                            </span>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                    </Card>
+                    <div className={`flex items-center gap-4 py-4 border-l-4 ${config.accentColor} pl-4`}>
+                      <IconComponent className={`h-6 w-6 ${config.iconColor}`} />
+                      <div className="flex-1">
+                        <h2 className="text-xl font-semibold text-foreground">{config.label}</h2>
+                        <p className="text-sm text-muted-foreground">{config.description}</p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {categoryActivities.length} {categoryActivities.length === 1 ? "activity" : "activities"}
+                      </span>
+                    </div>
 
                     <div className="space-y-4">
                       {categoryActivities.map((activity) => (
