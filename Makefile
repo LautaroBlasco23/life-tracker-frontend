@@ -1,9 +1,7 @@
-# Variables
 APP_NAME := nextjs-app
 PORT := 3000
 DOCKER_TAG := latest
 
-# Default target
 .PHONY: help
 help:
 	@echo "Available commands:"
@@ -15,6 +13,7 @@ help:
 	@echo "  clean           - Remove containers and images"
 	@echo "  logs            - View container logs"
 	@echo "  shell           - Open shell in running container"
+	@echo "  update-deploy   - Rebuild and redeploy with cleanup"
 
 .PHONY: build-prod
 build-prod:
@@ -22,12 +21,10 @@ build-prod:
 		--build-arg NEXT_PUBLIC_API_URL=https://api-lifetracker.lautaroblasco.com/api \
 		-t $(APP_NAME):$(DOCKER_TAG) .
 
-# Build development image
 .PHONY: build-dev
 build-dev:
 	docker build -f Dockerfile.dev -t $(APP_NAME)-dev:$(DOCKER_TAG) .
 
-# Run production container
 .PHONY: run-container
 run-container: build-prod
 	docker run -d \
@@ -36,7 +33,6 @@ run-container: build-prod
 		$(APP_NAME):$(DOCKER_TAG)
 	@echo "Container running at http://localhost:$(PORT)"
 
-# Run development container with hot reload
 .PHONY: run-dev
 run-dev: build-dev
 	docker run -d \
@@ -47,7 +43,6 @@ run-dev: build-dev
 		$(APP_NAME)-dev:$(DOCKER_TAG)
 	@echo "Development container running at http://localhost:$(PORT)"
 
-# Stop running containers
 .PHONY: stop
 stop:
 	-docker stop $(APP_NAME)
@@ -55,38 +50,31 @@ stop:
 	-docker rm $(APP_NAME)
 	-docker rm $(APP_NAME)-dev
 
-# Clean up containers and images
 .PHONY: clean
 clean: stop
 	-docker rmi $(APP_NAME):$(DOCKER_TAG)
 	-docker rmi $(APP_NAME)-dev:$(DOCKER_TAG)
 	docker system prune -f
 
-# View logs
 .PHONY: logs
 logs:
 	docker logs -f $(APP_NAME)
 
-# View dev logs
 .PHONY: logs-dev
 logs-dev:
 	docker logs -f $(APP_NAME)-dev
 
-# Open shell in running container
 .PHONY: shell
 shell:
 	docker exec -it $(APP_NAME) /bin/sh
 
-# Open shell in dev container
 .PHONY: shell-dev
 shell-dev:
 	docker exec -it $(APP_NAME)-dev /bin/sh
 
-# Restart container
 .PHONY: restart
 restart: stop run-container
 
-# Restart dev container
 .PHONY: restart-dev
 restart-dev: stop run-dev
 
@@ -98,3 +86,23 @@ rebuild: stop
 		-p $(PORT):3000 \
 		$(APP_NAME):$(DOCKER_TAG)
 	@echo "Container running at http://localhost:$(PORT)"
+
+.PHONY: update-deploy
+update-deploy:
+	@echo "Stopping and removing old container..."
+	-docker stop $(APP_NAME)
+	-docker rm $(APP_NAME)
+	@echo "Removing old image..."
+	-docker rmi $(APP_NAME):$(DOCKER_TAG)
+	@echo "Building new image..."
+	docker build \
+		--build-arg NEXT_PUBLIC_API_URL=https://api-lifetracker.lautaroblasco.com/api \
+		-t $(APP_NAME):$(DOCKER_TAG) .
+	@echo "Starting new container..."
+	docker run -d \
+		--name $(APP_NAME) \
+		-p $(PORT):3000 \
+		$(APP_NAME):$(DOCKER_TAG)
+	@echo "Cleaning up dangling images..."
+	docker image prune -f
+	@echo "Deployment complete! Container running at http://localhost:$(PORT)"
