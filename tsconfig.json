@@ -15,7 +15,9 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/types": ["./types/index.ts"],
+      "@/types/*": ["./types/*"]
     },
     "plugins": [
       {
