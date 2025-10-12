@@ -1,123 +1,137 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AuthGuard } from "@/components/auth-guard"
-import { Navigation } from "@/components/navigation"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { useToast } from "@/hooks/use-toast"
-import type { Transaction, TransactionType } from "@/types/finance"
-import { Plus, TrendingUp, TrendingDown, Wallet } from "lucide-react"
-import { financeService } from "@/services/financeService"
-import { TransactionCard } from "@/components/finance/transactionCardComponent"
-import { CreateTransactionModal } from "@/components/finance/createTransactionModal"
-import { EditTransactionModal } from "@/components/finance/editTransactionModal"
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthGuard } from '@/components/auth-guard';
+import { Navigation } from '@/components/navigation';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { useToast } from '@/hooks/use-toast';
+import type { Transaction, TransactionType, Category } from '@/types';
+import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { financeService } from '@/services/financeService';
+import { TransactionCard } from '@/components/finance/transactionCardComponent';
+import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
+import { EditTransactionModal } from '@/components/finance/editTransactionModal';
 
 const TYPE_CONFIG = {
   income: {
-    label: "Income",
+    label: 'Income',
     icon: TrendingUp,
-    description: "Money coming in",
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-50 dark:bg-green-950/20",
-    borderColor: "border-green-200 dark:border-green-800",
+    description: 'Money coming in',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/20',
+    borderColor: 'border-green-200 dark:border-green-800',
   },
-  expense: {
-    label: "Expenses",
+  outcome: {
+    label: 'Expenses',
     icon: TrendingDown,
-    description: "Money going out",
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-950/20",
-    borderColor: "border-red-200 dark:border-red-800",
+    description: 'Money going out',
+    color: 'text-red-600 dark:text-red-400',
+    bgColor: 'bg-red-50 dark:bg-red-950/20',
+    borderColor: 'border-red-200 dark:border-red-800',
   },
-} as const
+} as const;
 
 export default function FinancePage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
-  const { toast } = useToast()
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadTransactions()
-  }, [])
+    loadData();
+  }, []);
 
-  const loadTransactions = async () => {
+  const loadData = async () => {
     try {
-      setIsLoading(true)
-      const userTransactions = await financeService.getTransactionsByUserId()
-      setTransactions(userTransactions)
+      setIsLoading(true);
+      const [userTransactions, allCategories] = await Promise.all([
+        financeService.getTransactions(),
+        financeService.getCategories(),
+      ]);
+      setTransactions(userTransactions);
+      setCategories(allCategories);
     } catch (error) {
-      console.error('Failed to load transactions:', error)
+      console.error('Failed to load data:', error);
       toast({
-        title: "Failed to load transactions",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      })
+        title: 'Failed to load data',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleDeleteTransaction = async (transactionId: number) => {
+  const handleDeleteTransaction = async (transactionId: string) => {
     try {
-      await financeService.deleteTransaction(transactionId)
-      setTransactions(transactions.filter((transaction) => transaction.id !== transactionId))
+      await financeService.deleteTransaction(transactionId);
+      setTransactions(
+        transactions.filter((transaction) => transaction.id !== transactionId)
+      );
       toast({
-        title: "Transaction deleted",
-        description: "The transaction has been successfully deleted.",
-      })
+        title: 'Transaction deleted',
+        description: 'The transaction has been successfully deleted.',
+      });
     } catch (error) {
       toast({
-        title: "Delete failed",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      })
+        title: 'Delete failed',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleTransactionCreated = (newTransaction: Transaction) => {
-    setTransactions([newTransaction, ...transactions])
-    setShowCreateModal(false)
-  }
+    setTransactions([newTransaction, ...transactions]);
+    setShowCreateModal(false);
+  };
 
   const handleTransactionUpdated = (updatedTransaction: Transaction) => {
-    setTransactions(transactions.map((transaction) =>
-      transaction.id === updatedTransaction.id ? updatedTransaction : transaction
-    ))
-    setShowEditModal(false)
-    setEditingTransaction(null)
-  }
+    setTransactions(
+      transactions.map((transaction) =>
+        transaction.id === updatedTransaction.id
+          ? updatedTransaction
+          : transaction
+      )
+    );
+    setShowEditModal(false);
+    setEditingTransaction(null);
+  };
 
   const handleEditTransaction = (transaction: Transaction) => {
-    setEditingTransaction(transaction)
-    setShowEditModal(true)
-  }
+    setEditingTransaction(transaction);
+    setShowEditModal(true);
+  };
 
   const transactionsByType = transactions.reduce(
     (acc, transaction) => {
-      const type = transaction.type
+      const type = transaction.type;
       if (!acc[type]) {
-        acc[type] = []
+        acc[type] = [];
       }
-      acc[type].push(transaction)
-      return acc
+      acc[type].push(transaction);
+      return acc;
     },
-    {} as Record<TransactionType, Transaction[]>,
-  )
+    {} as Record<TransactionType, Transaction[]>
+  );
 
   const totalIncome = transactions
-    .filter(t => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0)
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpense = transactions
-    .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0)
+  const totalOutcome = transactions
+    .filter((t) => t.type === 'outcome')
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const balance = totalIncome - totalExpense
+  const balance = totalIncome - totalOutcome;
 
   if (isLoading) {
     return (
@@ -126,7 +140,7 @@ export default function FinancePage() {
           <div className="text-muted-foreground">Loading transactions...</div>
         </div>
       </AuthGuard>
-    )
+    );
   }
 
   return (
@@ -136,12 +150,19 @@ export default function FinancePage() {
         <div className="max-w-4xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-semibold text-foreground mb-2">Finance</h1>
-              <p className="text-muted-foreground">Track your income and expenses</p>
+              <h1 className="text-3xl font-semibold text-foreground mb-2">
+                Finance
+              </h1>
+              <p className="text-muted-foreground">
+                Track your income and expenses
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 New Transaction
               </Button>
@@ -153,7 +174,9 @@ export default function FinancePage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Total Income</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Total Income
+                    </p>
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                       ${totalIncome.toFixed(2)}
                     </p>
@@ -169,9 +192,11 @@ export default function FinancePage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Total Expenses</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Total Expenses
+                    </p>
                     <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                      ${totalExpense.toFixed(2)}
+                      ${totalOutcome.toFixed(2)}
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
@@ -181,29 +206,43 @@ export default function FinancePage() {
               </CardContent>
             </Card>
 
-            <Card className={balance >= 0
-              ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
-              : "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800"
-            }>
+            <Card
+              className={
+                balance >= 0
+                  ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                  : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
+              }
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Balance</p>
-                    <p className={`text-2xl font-bold ${balance >= 0
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-orange-600 dark:text-orange-400"
-                      }`}>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Balance
+                    </p>
+                    <p
+                      className={`text-2xl font-bold ${
+                        balance >= 0
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-orange-600 dark:text-orange-400'
+                      }`}
+                    >
                       ${balance.toFixed(2)}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-full ${balance >= 0
-                    ? "bg-blue-100 dark:bg-blue-900/30"
-                    : "bg-orange-100 dark:bg-orange-900/30"
-                    }`}>
-                    <Wallet className={`h-6 w-6 ${balance >= 0
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-orange-600 dark:text-orange-400"
-                      }`} />
+                  <div
+                    className={`p-3 rounded-full ${
+                      balance >= 0
+                        ? 'bg-blue-100 dark:bg-blue-900/30'
+                        : 'bg-orange-100 dark:bg-orange-900/30'
+                    }`}
+                  >
+                    <Wallet
+                      className={`h-6 w-6 ${
+                        balance >= 0
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-orange-600 dark:text-orange-400'
+                      }`}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -217,22 +256,29 @@ export default function FinancePage() {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                     <Plus className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-medium text-foreground mb-2">No transactions yet</h3>
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No transactions yet
+                  </h3>
                   <p>Get started by creating your first transaction.</p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>Create your first transaction</Button>
+                <Button onClick={() => setShowCreateModal(true)}>
+                  Create your first transaction
+                </Button>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-8">
               {(Object.keys(TYPE_CONFIG) as TransactionType[]).map((type) => {
-                const typeTransactions = transactionsByType[type] || []
-                const config = TYPE_CONFIG[type]
-                const IconComponent = config.icon
+                const typeTransactions = transactionsByType[type] || [];
+                const config = TYPE_CONFIG[type];
+                const IconComponent = config.icon;
 
-                if (typeTransactions.length === 0) return null
+                if (typeTransactions.length === 0) return null;
 
-                const typeTotal = typeTransactions.reduce((sum, t) => sum + t.amount, 0)
+                const typeTotal = typeTransactions.reduce(
+                  (sum, t) => sum + t.amount,
+                  0
+                );
 
                 return (
                   <div key={type} className="space-y-4">
@@ -243,15 +289,24 @@ export default function FinancePage() {
                             <IconComponent className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <div className="text-foreground">{config.label}</div>
-                            <div className="text-sm font-normal text-muted-foreground">{config.description}</div>
+                            <div className="text-foreground">
+                              {config.label}
+                            </div>
+                            <div className="text-sm font-normal text-muted-foreground">
+                              {config.description}
+                            </div>
                           </div>
                           <div className="ml-auto text-right">
-                            <div className={`text-lg font-bold ${config.color}`}>
+                            <div
+                              className={`text-lg font-bold ${config.color}`}
+                            >
                               ${typeTotal.toFixed(2)}
                             </div>
                             <span className="text-sm text-muted-foreground">
-                              {typeTransactions.length} {typeTransactions.length === 1 ? "transaction" : "transactions"}
+                              {typeTransactions.length}{' '}
+                              {typeTransactions.length === 1
+                                ? 'transaction'
+                                : 'transactions'}
                             </span>
                           </div>
                         </CardTitle>
@@ -263,13 +318,15 @@ export default function FinancePage() {
                         <TransactionCard
                           key={transaction.id}
                           transaction={transaction}
-                          onDelete={() => handleDeleteTransaction(transaction.id)}
+                          onDelete={() =>
+                            handleDeleteTransaction(transaction.id)
+                          }
                           onEdit={() => handleEditTransaction(transaction)}
                         />
                       ))}
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -278,6 +335,7 @@ export default function FinancePage() {
             open={showCreateModal}
             onOpenChange={setShowCreateModal}
             onTransactionCreated={handleTransactionCreated}
+            categories={categories}
           />
 
           <EditTransactionModal
@@ -285,9 +343,10 @@ export default function FinancePage() {
             onOpenChange={setShowEditModal}
             transaction={editingTransaction}
             onTransactionUpdated={handleTransactionUpdated}
+            categories={categories}
           />
         </div>
       </div>
     </AuthGuard>
-  )
+  );
 }
