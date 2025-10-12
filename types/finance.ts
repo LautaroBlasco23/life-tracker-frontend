@@ -1,43 +1,79 @@
-export type TransactionType = "income" | "expense"
-export type TransactionCategory =
-  | "salary" | "freelance" | "investment" | "other_income"
-  | "food" | "transport" | "utilities" | "entertainment" | "health" | "shopping" | "other_expense"
+export type TransactionType = 'income' | 'outcome';
+
+export interface Category {
+  id: number;
+  name: string;
+  type: TransactionType;
+  icon?: string;
+  subcategories?: Subcategory[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Subcategory {
+  id: number;
+  categoryId: number;
+  name: string;
+  icon?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Transaction {
-  id: number
-  userId: number
-  title: string
-  description: string
-  amount: number
-  type: TransactionType
-  category: TransactionCategory
-  date: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  userId: number;
+  type: TransactionType;
+  amount: number;
+  categoryId: number;
+  categoryName: string;
+  subcategoryId: number;
+  subcategoryName: string;
+  description?: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateTransactionRequest {
-  title: string
-  description: string
-  amount: number
-  type: TransactionType
-  category: TransactionCategory
-  date?: string
+  type: TransactionType;
+  amount: number;
+  categoryId: number;
+  subcategoryId: number;
+  description?: string;
+  date?: string;
 }
 
 export interface UpdateTransactionRequest {
-  title?: string
-  description?: string
-  amount?: number
-  type?: TransactionType
-  category?: TransactionCategory
-  date?: string
+  type?: TransactionType;
+  amount?: number;
+  categoryId?: number;
+  subcategoryId?: number;
+  description?: string;
+  date?: string;
+}
+
+export interface CategorySummary {
+  categoryId: number;
+  categoryName: string;
+  total: number;
+  percentage: number;
+  count: number;
 }
 
 export interface FinanceSummary {
-  totalIncome: number
-  totalExpense: number
-  balance: number
-  transactionCount: number
-  period: string
+  totalIncome: number;
+  totalOutcome: number;
+  balance: number;
+  incomeByCategory: CategorySummary[];
+  outcomeByCategory: CategorySummary[];
+  period: string;
+}
+
+export interface MonthlyStats {
+  month: string;
+  year: number;
+  totalIncome: number;
+  totalOutcome: number;
+  balance: number;
+  transactionCount: number;
 }
