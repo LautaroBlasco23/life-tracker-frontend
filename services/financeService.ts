@@ -2,114 +2,163 @@ import type {
   Transaction,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  FinanceSummary
-} from "@/types"
+  FinanceSummary,
+  Category,
+  MonthlyStats,
+  TransactionType,
+} from '@/types';
+import { authService } from './auth-service';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1"
+interface ApiResponse<T> {
+  message: string;
+  data: T;
+  count?: number;
+  year?: number;
+}
 
 class FinanceService {
-  private getAuthToken(): string | null {
-    return localStorage.getItem("token")
-  }
+  private baseUrl =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
-  private getAuthHeaders(): HeadersInit {
-    const token = this.getAuthToken()
-    return {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    }
-  }
-
-  async getTransactionsByUserId(): Promise<Transaction[]> {
-    const response = await fetch(`${API_BASE_URL}/transactions`, {
-      method: "GET",
-      headers: this.getAuthHeaders(),
-    })
+  async getCategories(type?: TransactionType): Promise<Category[]> {
+    const params = type ? `?type=${type}` : '';
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/categories${params}`
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to fetch transactions" }))
-      throw new Error(error.message || "Failed to fetch transactions")
+      throw new Error('Failed to fetch categories');
     }
 
-    return response.json()
+    const result: ApiResponse<Category[]> = await response.json();
+    return result.data;
   }
 
-  async getTransactionById(id: number): Promise<Transaction> {
-    const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
-      method: "GET",
-      headers: this.getAuthHeaders(),
-    })
+  async getTransactions(
+    type?: TransactionType,
+    startDate?: string,
+    endDate?: string,
+    limit?: number
+  ): Promise<Transaction[]> {
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (limit) params.append('limit', limit.toString());
+
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/transactions?${params.toString()}`
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to fetch transaction" }))
-      throw new Error(error.message || "Failed to fetch transaction")
+      throw new Error('Failed to fetch transactions');
     }
 
-    return response.json()
+    const result: ApiResponse<Transaction[]> = await response.json();
+    return result.data;
   }
 
-  async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
-    const response = await fetch(`${API_BASE_URL}/transactions`, {
-      method: "POST",
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify({
-        ...data,
-        date: data.date || new Date().toISOString(),
-      }),
-    })
+  async getTransactionById(id: string): Promise<Transaction> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/transactions/${id}`
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to create transaction" }))
-      throw new Error(error.message || "Failed to create transaction")
+      throw new Error('Failed to fetch transaction');
     }
 
-    return response.json()
+    const result: ApiResponse<Transaction> = await response.json();
+    return result.data;
   }
 
-  async updateTransaction(id: number, data: UpdateTransactionRequest): Promise<Transaction> {
-    const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
-      method: "PUT",
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(data),
-    })
+  async createTransaction(
+    data: CreateTransactionRequest
+  ): Promise<Transaction> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/transactions`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          date: data.date || new Date().toISOString(),
+        }),
+      }
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to update transaction" }))
-      throw new Error(error.message || "Failed to update transaction")
+      throw new Error('Failed to create transaction');
     }
 
-    return response.json()
+    const result: ApiResponse<Transaction> = await response.json();
+    return result.data;
   }
 
-  async deleteTransaction(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
-      method: "DELETE",
-      headers: this.getAuthHeaders(),
-    })
+  async updateTransaction(
+    id: string,
+    data: UpdateTransactionRequest
+  ): Promise<Transaction> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/transactions/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to delete transaction" }))
-      throw new Error(error.message || "Failed to delete transaction")
+      throw new Error('Failed to update transaction');
+    }
+
+    const result: ApiResponse<Transaction> = await response.json();
+    return result.data;
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/transactions/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete transaction');
     }
   }
 
-  async getFinanceSummary(startDate?: string, endDate?: string): Promise<FinanceSummary> {
-    const params = new URLSearchParams()
-    if (startDate) params.append("startDate", startDate)
-    if (endDate) params.append("endDate", endDate)
+  async getFinanceSummary(
+    startDate: string,
+    endDate: string
+  ): Promise<FinanceSummary> {
+    const params = new URLSearchParams();
+    params.append('start_date', startDate);
+    params.append('end_date', endDate);
 
-    const response = await fetch(`${API_BASE_URL}/transactions/summary?${params.toString()}`, {
-      method: "GET",
-      headers: this.getAuthHeaders(),
-    })
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/summary?${params.toString()}`
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Failed to fetch summary" }))
-      throw new Error(error.message || "Failed to fetch summary")
+      throw new Error('Failed to fetch summary');
     }
 
-    return response.json()
+    const result: ApiResponse<FinanceSummary> = await response.json();
+    return result.data;
+  }
+
+  async getMonthlyStats(year?: number): Promise<MonthlyStats[]> {
+    const params = year ? `?year=${year}` : '';
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/monthly-stats${params}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch monthly stats');
+    }
+
+    const result: ApiResponse<MonthlyStats[]> = await response.json();
+    return result.data;
   }
 }
 
-export const financeService = new FinanceService()
+export const financeService = new FinanceService();
