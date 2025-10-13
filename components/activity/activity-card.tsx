@@ -1,66 +1,75 @@
-"use client"
+'use client';
 
-import React, { useState, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import React, { useState, useRef } from 'react';
 import {
-  MoreHorizontal,
-  Trash2,
-  Edit,
-  Undo2
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { activityService } from "@/services/activity-service"
-import { DeleteActivityModal } from "@/components/activity/delete-activity-modal"
-import type { Activity, DayOfWeek } from "@/types/activity"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { MoreHorizontal, Trash2, Edit, Undo2 } from 'lucide-react';
+import { activityService } from '@/services/activity-service';
+import { DeleteActivityModal } from '@/components/activity/delete-activity-modal';
+import type { Activity, DayOfWeek } from '@/types/activity';
+import { showToast } from '@/lib/toast';
 
 interface ActivityCardProps {
-  activity: Activity
-  onDelete: () => void
-  onEdit: () => void
-  onProgressUpdate: (updatedActivity: Activity) => void
+  activity: Activity;
+  onDelete: () => void;
+  onEdit: () => void;
+  onProgressUpdate: (updatedActivity: Activity) => void;
 }
 
-const CustomDropdown = ({ children, trigger, align = "end" }: {
-  children: React.ReactNode
-  trigger: React.ReactNode
-  align?: "start" | "end"
+const CustomDropdown = ({
+  children,
+  trigger,
+  align = 'end',
+}: {
+  children: React.ReactNode;
+  trigger: React.ReactNode;
+  align?: 'start' | 'end';
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
       }
-    }
+    };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleEscape)
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [isOpen])
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsOpen(!isOpen)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="relative">
@@ -75,177 +84,191 @@ const CustomDropdown = ({ children, trigger, align = "end" }: {
       {isOpen && (
         <div
           ref={dropdownRef}
-          className={`absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 ${align === 'end' ? 'right-0' : 'left-0'
-            }`}
+          className={`absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 ${
+            align === 'end' ? 'right-0' : 'left-0'
+          }`}
           style={{ top: '100%', marginTop: '4px' }}
         >
-          <div onClick={() => setIsOpen(false)}>
-            {children}
-          </div>
+          <div onClick={() => setIsOpen(false)}>{children}</div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 const DropdownMenuItem = ({
   children,
   onClick,
-  variant = "default",
-  disabled = false
+  variant = 'default',
+  disabled = false,
 }: {
-  children: React.ReactNode
-  onClick?: () => void
-  variant?: "default" | "destructive"
-  disabled?: boolean
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'default' | 'destructive';
+  disabled?: boolean;
 }) => {
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     if (!disabled && onClick) {
-      onClick()
+      onClick();
     }
-  }
+  };
 
   return (
     <div
-      className={`relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${disabled
-        ? 'pointer-events-none opacity-50'
-        : variant === 'destructive'
-          ? 'text-red-600 focus:bg-red-50 focus:text-red-600 hover:bg-red-50'
-          : 'focus:bg-accent focus:text-accent-foreground hover:bg-accent'
-        }`}
+      className={`relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${
+        disabled
+          ? 'pointer-events-none opacity-50'
+          : variant === 'destructive'
+            ? 'text-red-600 focus:bg-red-50 focus:text-red-600 hover:bg-red-50'
+            : 'focus:bg-accent focus:text-accent-foreground hover:bg-accent'
+      }`}
       onClick={handleClick}
     >
       {children}
     </div>
-  )
-}
+  );
+};
 
-export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: ActivityCardProps) {
-  const [isRecording, setIsRecording] = useState(false)
-  const [isReverting, setIsReverting] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const { toast } = useToast()
+export function ActivityCard({
+  activity,
+  onDelete,
+  onEdit,
+  onProgressUpdate,
+}: ActivityCardProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isReverting, setIsReverting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteClick = () => {
-    setShowDeleteModal(true)
-  }
+    setShowDeleteModal(true);
+  };
 
   const handleConfirmDelete = async () => {
-    await onDelete()
-  }
+    await onDelete();
+  };
 
   const handleRevertCompletion = async () => {
-    setIsReverting(true)
+    setIsReverting(true);
 
-    const newCompletions = Math.max(0, activity.todayCompletions - 1)
+    const newCompletions = Math.max(0, activity.todayCompletions - 1);
     const optimisticActivity: Activity = {
       ...activity,
       todayCompletions: newCompletions,
-      isCompletedToday: newCompletions >= activity.completionAmount
-    }
-    onProgressUpdate(optimisticActivity)
+      isCompletedToday: newCompletions >= activity.completionAmount,
+    };
+    onProgressUpdate(optimisticActivity);
 
     try {
-      await activityService.revertLastCompletion(activity.id)
+      await activityService.revertLastCompletion(activity.id);
 
-      toast({
-        title: "Completion Reverted",
+      showToast({
+        title: 'Completion Reverted',
         description: `Removed one completion from "${activity.title}".`,
-        variant: "default",
-      })
+        variant: 'default',
+      });
     } catch (error) {
-      onProgressUpdate(activity)
+      onProgressUpdate(activity);
 
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to revert completion",
-        variant: "destructive",
-      })
+      showToast({
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to revert completion',
+        variant: 'destructive',
+      });
     } finally {
-      setIsReverting(false)
+      setIsReverting(false);
     }
-  }
+  };
 
   const handleCardClick = async (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    const isDropdownElement = target.closest('[data-dropdown]') ||
+    const target = e.target as HTMLElement;
+    const isDropdownElement =
+      target.closest('[data-dropdown]') ||
       target.closest('button') ||
-      target.tagName === 'BUTTON'
+      target.tagName === 'BUTTON';
 
     if (isDropdownElement) {
-      return
+      return;
     }
 
     if (activity.isCompletedToday) {
-      toast({
-        title: "Activity Complete",
-        description: "This activity is already completed for today!",
-        variant: "default",
-      })
-      return
+      showToast({
+        title: 'Activity Complete',
+        description: 'This activity is already completed for today!',
+        variant: 'default',
+      });
+      return;
     }
 
-    await handleRecordCompletion()
-  }
+    await handleRecordCompletion();
+  };
 
   const handleRecordCompletion = async () => {
-    setIsRecording(true)
+    setIsRecording(true);
 
     const optimisticActivity: Activity = {
       ...activity,
       todayCompletions: activity.todayCompletions + 1,
-      isCompletedToday: (activity.todayCompletions + 1) >= activity.completionAmount
-    }
-    onProgressUpdate(optimisticActivity)
+      isCompletedToday:
+        activity.todayCompletions + 1 >= activity.completionAmount,
+    };
+    onProgressUpdate(optimisticActivity);
 
     try {
-      await activityService.recordActivity(activity.id)
+      await activityService.recordActivity(activity.id);
 
-      const isNowCompleted = optimisticActivity.isCompletedToday
-      toast({
-        title: isNowCompleted ? "Activity Completed!" : "Progress Updated",
+      const isNowCompleted = optimisticActivity.isCompletedToday;
+      showToast({
+        title: isNowCompleted ? 'Activity Completed!' : 'Progress Updated',
         description: isNowCompleted
           ? `Great job! You've completed "${activity.title}" for today.`
           : `Progress: ${optimisticActivity.todayCompletions}/${optimisticActivity.completionAmount}`,
-        variant: "default",
-      })
+        variant: 'default',
+      });
     } catch (error) {
-      onProgressUpdate(activity)
+      onProgressUpdate(activity);
 
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to record completion",
-        variant: "destructive",
-      })
+      showToast({
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to record completion',
+        variant: 'destructive',
+      });
     } finally {
-      setIsRecording(false)
+      setIsRecording(false);
     }
-  }
-
-
+  };
 
   const formatDayFrequency = (dayFrequency?: string) => {
-    if (!dayFrequency) return null
+    if (!dayFrequency) return null;
     try {
-      const days: DayOfWeek[] = JSON.parse(dayFrequency)
-      return days.map((day) => day.charAt(0).toUpperCase() + day.slice(1)).join(", ")
+      const days: DayOfWeek[] = JSON.parse(dayFrequency);
+      return days
+        .map((day) => day.charAt(0).toUpperCase() + day.slice(1))
+        .join(', ');
     } catch {
-      return null
+      return null;
     }
-  }
+  };
 
-  const progressPercentage = (activity.todayCompletions / activity.completionAmount) * 100
-  const isCompleted = activity.isCompletedToday
+  const progressPercentage =
+    (activity.todayCompletions / activity.completionAmount) * 100;
+  const isCompleted = activity.isCompletedToday;
 
   return (
     <>
       <Card
-        className={`bg-muted/30 transition-all duration-200 ${isCompleted
-          ? "border-green-500/50 bg-green-500/10"
-          : "hover:shadow-md cursor-pointer hover:scale-[1.02] hover:bg-muted/50"
-          } ${isRecording || isReverting ? "opacity-70" : ""}`}
+        className={`bg-muted/30 transition-all duration-200 ${
+          isCompleted
+            ? 'border-green-500/50 bg-green-500/10'
+            : 'hover:shadow-md cursor-pointer hover:scale-[1.02] hover:bg-muted/50'
+        } ${isRecording || isReverting ? 'opacity-70' : ''}`}
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
@@ -253,7 +276,7 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <CardTitle
-                  className={`text-lg font-medium ${isCompleted ? "text-green-600 dark:text-green-400" : "text-foreground"}`}
+                  className={`text-lg font-medium ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}
                 >
                   {activity.title}
                 </CardTitle>
@@ -267,7 +290,9 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
                 )}
               </div>
               {activity.description && (
-                <CardDescription className="mt-1 text-muted-foreground">{activity.description}</CardDescription>
+                <CardDescription className="mt-1 text-muted-foreground">
+                  {activity.description}
+                </CardDescription>
               )}
             </div>
 
@@ -286,12 +311,18 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
                   Edit
                 </DropdownMenuItem>
                 {activity.todayCompletions > 0 && (
-                  <DropdownMenuItem onClick={handleRevertCompletion} disabled={isReverting}>
+                  <DropdownMenuItem
+                    onClick={handleRevertCompletion}
+                    disabled={isReverting}
+                  >
                     <Undo2 className="h-4 w-4 mr-2" />
-                    {isReverting ? "Reverting..." : "Revert Last"}
+                    {isReverting ? 'Reverting...' : 'Revert Last'}
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={handleDeleteClick} variant="destructive">
+                <DropdownMenuItem
+                  onClick={handleDeleteClick}
+                  variant="destructive"
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -306,18 +337,21 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
                 {activity.todayCompletions}/{activity.completionAmount}
               </span>
               {!isCompleted && (
-                <span className="text-xs text-muted-foreground">Tap to complete</span>
+                <span className="text-xs text-muted-foreground">
+                  Tap to complete
+                </span>
               )}
             </div>
             <Progress value={progressPercentage} className="h-2" />
           </div>
           <div className="flex items-center justify-end gap-2">
             <Badge variant="outline">{activity.frequency}</Badge>
-            {activity.frequency === "weekly" && formatDayFrequency(activity.dayFrequency) && (
-              <Badge variant="outline" className="text-xs">
-                {formatDayFrequency(activity.dayFrequency)}
-              </Badge>
-            )}
+            {activity.frequency === 'weekly' &&
+              formatDayFrequency(activity.dayFrequency) && (
+                <Badge variant="outline" className="text-xs">
+                  {formatDayFrequency(activity.dayFrequency)}
+                </Badge>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -328,5 +362,5 @@ export function ActivityCard({ activity, onDelete, onEdit, onProgressUpdate }: A
         onConfirmDelete={handleConfirmDelete}
       />
     </>
-  )
+  );
 }

@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { authService } from '@/services/auth-service';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -28,7 +28,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const router = useRouter();
-  const { toast } = useToast();
 
   const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
   const showPasswordError = passwordTouched && !isPasswordValid;
@@ -37,7 +36,7 @@ export default function RegisterPage() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast({
+      showToast({
         title: 'Password mismatch',
         description: 'Passwords do not match. Please try again.',
         variant: 'destructive',
@@ -46,7 +45,7 @@ export default function RegisterPage() {
     }
 
     if (!isPasswordValid) {
-      toast({
+      showToast({
         title: 'Password too short',
         description: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
         variant: 'destructive',
@@ -58,7 +57,7 @@ export default function RegisterPage() {
 
     try {
       await authService.register({ firstName, lastName, email, password });
-      toast({
+      showToast({
         title: 'Account created',
         description: 'Your account has been created successfully.',
       });
@@ -66,7 +65,7 @@ export default function RegisterPage() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An error occurred';
-      toast({
+      showToast({
         title: 'Registration failed',
         description: errorMessage,
         variant: 'destructive',

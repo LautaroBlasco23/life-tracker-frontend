@@ -19,9 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType, Category } from '@/types';
 import { financeService } from '@/services/financeService';
+import { showToast } from '@/lib/toast';
 
 interface CreateTransactionModalProps {
   open: boolean;
@@ -43,7 +43,6 @@ export function CreateTransactionModal({
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const resetForm = () => {
     setDescription('');
@@ -70,7 +69,7 @@ export function CreateTransactionModal({
 
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
-      toast({
+      showToast({
         title: 'Validation error',
         description: 'Please enter a valid amount greater than 0.',
         variant: 'destructive',
@@ -79,7 +78,7 @@ export function CreateTransactionModal({
     }
 
     if (!categoryId || !subcategoryId) {
-      toast({
+      showToast({
         title: 'Validation error',
         description: 'Please select a category and subcategory.',
         variant: 'destructive',
@@ -101,13 +100,13 @@ export function CreateTransactionModal({
 
       onTransactionCreated(newTransaction);
       resetForm();
-      toast({
+      showToast({
         title: 'Transaction created',
         description: 'Your new transaction has been successfully created.',
       });
     } catch (error) {
       console.error('Create transaction error:', error);
-      toast({
+      showToast({
         title: 'Creation failed',
         description:
           error instanceof Error ? error.message : 'An error occurred',

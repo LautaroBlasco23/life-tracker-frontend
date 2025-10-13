@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { financeService } from '@/services/financeService';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast';
 import type { Transaction, TransactionType, Category } from '@/types';
 
 interface EditTransactionModalProps {
@@ -45,7 +45,6 @@ export function EditTransactionModal({
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [date, setDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (transaction && open) {
@@ -89,7 +88,7 @@ export function EditTransactionModal({
 
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
-      toast({
+      showToast({
         title: 'Validation error',
         description: 'Please enter a valid amount greater than 0.',
         variant: 'destructive',
@@ -98,7 +97,7 @@ export function EditTransactionModal({
     }
 
     if (!categoryId || !subcategoryId) {
-      toast({
+      showToast({
         title: 'Validation error',
         description: 'Please select a category and subcategory.',
         variant: 'destructive',
@@ -122,13 +121,13 @@ export function EditTransactionModal({
       );
 
       onTransactionUpdated(updatedTransaction);
-      toast({
+      showToast({
         title: 'Transaction updated',
         description: 'Your transaction has been successfully updated.',
       });
       onOpenChange(false);
     } catch (error) {
-      toast({
+      showToast({
         title: 'Update failed',
         description:
           error instanceof Error ? error.message : 'An error occurred',

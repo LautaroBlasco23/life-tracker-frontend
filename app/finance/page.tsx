@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType, Category } from '@/types';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { financeService } from '@/services/financeService';
 import { TransactionCard } from '@/components/finance/transactionCardComponent';
 import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
 import { EditTransactionModal } from '@/components/finance/editTransactionModal';
+import { showToast } from '@/lib/toast';
 
 const TYPE_CONFIG = {
   income: {
@@ -41,7 +41,6 @@ export default function FinancePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -58,7 +57,7 @@ export default function FinancePage() {
       setCategories(allCategories);
     } catch (error) {
       console.error('Failed to load data:', error);
-      toast({
+      showToast({
         title: 'Failed to load data',
         description:
           error instanceof Error ? error.message : 'An error occurred',
@@ -75,12 +74,12 @@ export default function FinancePage() {
       setTransactions(
         transactions.filter((transaction) => transaction.id !== transactionId)
       );
-      toast({
+      showToast({
         title: 'Transaction deleted',
         description: 'The transaction has been successfully deleted.',
       });
     } catch (error) {
-      toast({
+      showToast({
         title: 'Delete failed',
         description:
           error instanceof Error ? error.message : 'An error occurred',

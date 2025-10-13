@@ -1,148 +1,170 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { activityService } from "@/services/activity-service"
-import { useToast } from "@/hooks/use-toast"
-import type { Activity, Frequency, DayOfWeek, DayTime } from "@/types/activity"
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { activityService } from '@/services/activity-service';
+import type { Activity, Frequency, DayOfWeek, DayTime } from '@/types/activity';
+import { showToast } from '@/lib/toast';
 
 interface EditActivityModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  activity: Activity | null
-  onActivityUpdated: (activity: Activity) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  activity: Activity | null;
+  onActivityUpdated: (activity: Activity) => void;
 }
 
 const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
-  { value: "monday", label: "Monday" },
-  { value: "tuesday", label: "Tuesday" },
-  { value: "wednesday", label: "Wednesday" },
-  { value: "thursday", label: "Thursday" },
-  { value: "friday", label: "Friday" },
-  { value: "saturday", label: "Saturday" },
-  { value: "sunday", label: "Sunday" },
-]
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' },
+];
 
 const CATEGORIES: { value: DayTime; label: string }[] = [
-  { value: "morning", label: "Morning" },
-  { value: "afternoon", label: "Afternoon" },
-  { value: "evening", label: "Evening" },
-]
+  { value: 'morning', label: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+];
 
-export function EditActivityModal({ open, onOpenChange, activity, onActivityUpdated }: EditActivityModalProps) {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [completionAmount, setCompletionAmount] = useState(1)
-  const [frequency, setFrequency] = useState<Frequency>("daily")
-  const [dayTime, setDayTime] = useState<DayTime>("morning")
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+export function EditActivityModal({
+  open,
+  onOpenChange,
+  activity,
+  onActivityUpdated,
+}: EditActivityModalProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [completionAmount, setCompletionAmount] = useState(1);
+  const [frequency, setFrequency] = useState<Frequency>('daily');
+  const [dayTime, setDayTime] = useState<DayTime>('morning');
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (activity && open) {
-      setTitle(activity.title)
-      setDescription(activity.description)
-      setCompletionAmount(activity.completionAmount)
-      setFrequency(activity.frequency)
-      setDayTime(activity.dayTime)
+      setTitle(activity.title);
+      setDescription(activity.description);
+      setCompletionAmount(activity.completionAmount);
+      setFrequency(activity.frequency);
+      setDayTime(activity.dayTime);
 
       // Parse day frequency if it exists
       if (activity.dayFrequency) {
         try {
-          const days: DayOfWeek[] = JSON.parse(activity.dayFrequency)
-          setSelectedDays(days)
+          const days: DayOfWeek[] = JSON.parse(activity.dayFrequency);
+          setSelectedDays(days);
         } catch {
-          setSelectedDays([])
+          setSelectedDays([]);
         }
       } else {
-        setSelectedDays([])
+        setSelectedDays([]);
       }
     }
-  }, [activity, open])
+  }, [activity, open]);
 
   const resetForm = () => {
-    setTitle("")
-    setDescription("")
-    setCompletionAmount(1)
-    setFrequency("daily")
-    setDayTime("morning")
-    setSelectedDays([])
-  }
+    setTitle('');
+    setDescription('');
+    setCompletionAmount(1);
+    setFrequency('daily');
+    setDayTime('morning');
+    setSelectedDays([]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!activity) return
+    e.preventDefault();
+    if (!activity) return;
 
-    if (frequency === "weekly" && selectedDays.length === 0) {
-      toast({
-        title: "Validation error",
-        description: "Please select at least one day for weekly activities.",
-        variant: "destructive",
-      })
-      return
+    if (frequency === 'weekly' && selectedDays.length === 0) {
+      showToast({
+        title: 'Validation error',
+        description: 'Please select at least one day for weekly activities.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const updatedActivity = await activityService.updateActivity(activity.id, {
-        title,
-        description,
-        completionAmount,
-        frequency,
-        dayTime,
-        dayFrequency: frequency === "weekly" ? selectedDays : undefined,
-      })
+      const updatedActivity = await activityService.updateActivity(
+        activity.id,
+        {
+          title,
+          description,
+          completionAmount,
+          frequency,
+          dayTime,
+          dayFrequency: frequency === 'weekly' ? selectedDays : undefined,
+        }
+      );
 
-      onActivityUpdated(updatedActivity)
-      toast({
-        title: "Activity updated",
-        description: "Your activity has been successfully updated.",
-      })
-      onOpenChange(false)
+      onActivityUpdated(updatedActivity);
+      showToast({
+        title: 'Activity updated',
+        description: 'Your activity has been successfully updated.',
+      });
+      onOpenChange(false);
     } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      })
+      showToast({
+        title: 'Update failed',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDayToggle = (day: DayOfWeek, checked: boolean) => {
     if (checked) {
-      setSelectedDays([...selectedDays, day])
+      setSelectedDays([...selectedDays, day]);
     } else {
-      setSelectedDays(selectedDays.filter((d) => d !== day))
+      setSelectedDays(selectedDays.filter((d) => d !== day));
     }
-  }
+  };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen && !isLoading) {
-      resetForm()
+      resetForm();
     }
-    onOpenChange(newOpen)
-  }
+    onOpenChange(newOpen);
+  };
 
-  if (!activity) return null
+  if (!activity) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Activity</DialogTitle>
-          <DialogDescription>Update your activity details and preferences.</DialogDescription>
+          <DialogDescription>
+            Update your activity details and preferences.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -186,7 +208,10 @@ export function EditActivityModal({ open, onOpenChange, activity, onActivityUpda
 
             <div className="space-y-2">
               <Label htmlFor="edit-category">Category</Label>
-              <Select value={dayTime} onValueChange={(value: DayTime) => setDayTime(value)}>
+              <Select
+                value={dayTime}
+                onValueChange={(value: DayTime) => setDayTime(value)}
+              >
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue />
                 </SelectTrigger>
@@ -203,7 +228,10 @@ export function EditActivityModal({ open, onOpenChange, activity, onActivityUpda
 
           <div className="space-y-2">
             <Label htmlFor="edit-frequency">Frequency</Label>
-            <Select value={frequency} onValueChange={(value: Frequency) => setFrequency(value)}>
+            <Select
+              value={frequency}
+              onValueChange={(value: Frequency) => setFrequency(value)}
+            >
               <SelectTrigger className="bg-input border-border">
                 <SelectValue />
               </SelectTrigger>
@@ -216,7 +244,7 @@ export function EditActivityModal({ open, onOpenChange, activity, onActivityUpda
             </Select>
           </div>
 
-          {frequency === "weekly" && (
+          {frequency === 'weekly' && (
             <div className="space-y-2">
               <Label>Days of the week</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -225,9 +253,14 @@ export function EditActivityModal({ open, onOpenChange, activity, onActivityUpda
                     <Checkbox
                       id={`edit-${day.value}`}
                       checked={selectedDays.includes(day.value)}
-                      onCheckedChange={(checked) => handleDayToggle(day.value, checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        handleDayToggle(day.value, checked as boolean)
+                      }
                     />
-                    <Label htmlFor={`edit-${day.value}`} className="text-sm font-normal">
+                    <Label
+                      htmlFor={`edit-${day.value}`}
+                      className="text-sm font-normal"
+                    >
                       {day.label}
                     </Label>
                   </div>
@@ -237,15 +270,20 @@ export function EditActivityModal({ open, onOpenChange, activity, onActivityUpda
           )}
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Updating..." : "Update Activity"}
+              {isLoading ? 'Updating...' : 'Update Activity'}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
