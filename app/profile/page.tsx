@@ -79,15 +79,14 @@ export default function ProfilePage() {
 
     setIsUploadingImage(true);
     try {
-      const imageUrl = await userService.uploadProfilePicture(file);
-      const updatedUser = await userService.updateUser({
-        profilePicUrl: imageUrl,
-      });
+      const updatedUser = await userService.uploadProfilePicture(file);
       setUser(updatedUser);
       showToast({
         title: 'Profile picture updated',
         description: 'Your profile picture has been successfully updated.',
       });
+
+      e.target.value = '';
     } catch (error) {
       showToast({
         title: 'Upload failed',

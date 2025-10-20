@@ -1,91 +1,141 @@
-import type { User } from "@/types/user"
-import { authService } from "./auth-service"
+import type { User } from '@/types/user';
+import { authService } from './auth-service';
 
 interface UpdateUserRequest {
-  firstName?: string
-  lastName?: string
-  profilePicUrl?: string
-  email?: string
+  firstName?: string;
+  lastName?: string;
+  profilePicUrl?: string;
+  email?: string;
+}
+
+interface ApiResponse<T> {
+  message: string;
+  data: T;
 }
 
 class UserService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-lifetracker.lautaroblasco.com/api'
+  private baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://api-lifetracker.lautaroblasco.com/api';
 
   async getUserById(id: number): Promise<User | null> {
-    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/${id}`)
-
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/${id}`
+    );
     if (!response.ok) {
-      if (response.status === 404) return null
-      throw new Error('Failed to fetch user')
+      if (response.status === 404) return null;
+      throw new Error('Failed to fetch user');
     }
-
-    return await response.json()
+    const result: ApiResponse<User> = await response.json();
+    return result.data;
   }
 
   async updateUser(updates: UpdateUserRequest): Promise<User> {
-    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/profile`, {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    })
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/profile`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error('Failed to update user')
+      throw new Error('Failed to update user');
     }
 
-    const updatedUser = await response.json()
+    const result: ApiResponse<User> = await response.json();
+    const updatedUser = result.data;
 
-    // Update current user in auth service
-    const currentUser = authService.getCurrentUser()
+    const currentUser = authService.getCurrentUser();
     if (currentUser) {
-      const newUser = { ...currentUser, ...updatedUser }
-        // Access private property - you might want to add a public method for this
-        ; (authService as any).currentUser = newUser
+      const newUser = { ...currentUser, ...updatedUser };
+      (authService as any).currentUser = newUser;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', JSON.stringify(newUser))
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
       }
     }
 
-    return updatedUser
+    return updatedUser;
   }
 
-  async uploadProfilePicture(file: File): Promise<string> {
-    const formData = new FormData()
-    formData.append('file', file)
+  async uploadProfilePicture(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append('image', file);
 
-    // TODO: fix this after implementing file upload in backend.
-    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/upload-profile-pic`, {
-      method: 'POST',
-      body: formData,
-      headers: {},
-    })
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/profile/image`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
 
     if (!response.ok) {
-      throw new Error('Failed to upload profile picture')
+      throw new Error('Failed to upload profile picture');
     }
 
-    const result = await response.json()
-    return result.url
+    const result: ApiResponse<User> = await response.json();
+    const updatedUser = result.data;
+
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      const newUser = { ...currentUser, ...updatedUser };
+      (authService as any).currentUser = newUser;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
+      }
+    }
+
+    return updatedUser;
+  }
+
+  async deleteProfilePicture(): Promise<void> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/profile/image`,
+      { method: 'DELETE' }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete profile picture');
+    }
+
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      const newUser = {
+        ...currentUser,
+        profilePicUrl: null,
+        thumbnailUrl: null,
+      };
+      (authService as any).currentUser = newUser;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('currentUser', JSON.stringify(newUser));
+      }
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users`)
-
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users`
+    );
     if (!response.ok) {
-      throw new Error('Failed to fetch users')
+      throw new Error('Failed to fetch users');
     }
-
-    return await response.json()
+    const result: ApiResponse<User[]> & { count: number } =
+      await response.json();
+    return result.data;
   }
 
   async deleteUser(id: number): Promise<void> {
-    const response = await authService.makeAuthenticatedRequest(`${this.baseUrl}/users/${id}`, {
-      method: 'DELETE',
-    })
-
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
     if (!response.ok) {
-      throw new Error('Failed to delete user')
+      throw new Error('Failed to delete user');
     }
   }
 }
 
-export const userService = new UserService()
+export const userService = new UserService();

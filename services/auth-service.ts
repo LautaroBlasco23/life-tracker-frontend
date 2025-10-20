@@ -200,9 +200,14 @@ class AuthService {
     options: RequestInit = {}
   ): Promise<Response> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
+
+    if (options.body instanceof FormData) {
+      // Don't set Content-Type for FormData - let browser handle it
+    } else if (!headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
