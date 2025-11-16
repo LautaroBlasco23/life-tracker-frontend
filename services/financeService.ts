@@ -8,6 +8,7 @@ import type {
   TransactionType,
 } from '@/types';
 import { authService } from './auth-service';
+import { getConfig } from '@/lib/config';
 
 interface ApiResponse<T> {
   message: string;
@@ -17,8 +18,9 @@ interface ApiResponse<T> {
 }
 
 class FinanceService {
-  private baseUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+  private get baseUrl(): string {
+    return getConfig().apiUrl;
+  }
 
   async getCategories(type?: TransactionType): Promise<Category[]> {
     const params = type ? `?type=${type}` : '';

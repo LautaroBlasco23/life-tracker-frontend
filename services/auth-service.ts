@@ -1,3 +1,4 @@
+import { getConfig } from '@/lib/config';
 import type {
   User,
   LoginRequest,
@@ -26,9 +27,9 @@ interface BackendErrorResponse {
 }
 
 class AuthService {
-  private baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://api-lifetracker.lautaroblasco.com/api';
+  private get baseUrl(): string {
+    return getConfig().apiUrl;
+  }
   private currentUser: User | null = null;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;

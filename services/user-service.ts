@@ -1,5 +1,6 @@
 import type { User } from '@/types/user';
 import { authService } from './auth-service';
+import { getConfig } from '@/lib/config';
 
 interface UpdateUserRequest {
   firstName?: string;
@@ -14,9 +15,9 @@ interface ApiResponse<T> {
 }
 
 class UserService {
-  private baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://api-lifetracker.lautaroblasco.com/api';
+  private get baseUrl(): string {
+    return getConfig().apiUrl;
+  }
 
   async getUserById(id: number): Promise<User | null> {
     const response = await authService.makeAuthenticatedRequest(
