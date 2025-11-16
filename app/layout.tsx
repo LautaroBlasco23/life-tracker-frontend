@@ -24,6 +24,9 @@ export default function RootLayout({
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
+      <head>
+        <script src="/env-config.js" />
+      </head>
       <body>
         <Suspense fallback={null}>
           <ThemeProvider>
