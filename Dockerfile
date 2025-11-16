@@ -28,6 +28,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY inject-env.sh /usr/local/bin/inject-env.sh
 RUN chmod +x /usr/local/bin/inject-env.sh
 
+RUN chown -R nextjs:nodejs /app/public
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
