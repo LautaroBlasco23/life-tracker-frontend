@@ -1,5 +1,6 @@
 import type React from 'react';
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { Analytics } from '@vercel/analytics/next';
@@ -9,9 +10,9 @@ import { Suspense } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Lifetracker',
+  description: 'Lifetracker app',
+  generator: 'lautaroblasco.com',
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
       <head>
-        <script src="/env-config.js" />
+        <Script src="/env-config.js" strategy="beforeInteractive" />
       </head>
       <body>
         <Suspense fallback={null}>
