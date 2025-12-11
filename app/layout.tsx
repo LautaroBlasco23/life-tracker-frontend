@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: 'Lifetracker',
   description: 'Lifetracker app',
   generator: 'lautaroblasco.com',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
