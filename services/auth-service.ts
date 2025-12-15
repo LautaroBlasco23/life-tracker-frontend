@@ -26,6 +26,8 @@ interface BackendErrorResponse {
   details?: string;
 }
 
+type AuthChangeCallback = (isAuthenticated: boolean) => void;
+
 class AuthService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
@@ -33,6 +35,7 @@ class AuthService {
   private currentUser: User | null = null;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
+  private authChangeCallbacks: Set<AuthChangeCallback> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -48,6 +51,17 @@ class AuthService {
         }
       }
     }
+  }
+
+  onAuthChange(callback: AuthChangeCallback): () => void {
+    this.authChangeCallbacks.add(callback);
+    return () => {
+      this.authChangeCallbacks.delete(callback);
+    };
+  }
+
+  private notifyAuthChange(isAuthenticated: boolean): void {
+    this.authChangeCallbacks.forEach((callback) => callback(isAuthenticated));
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
@@ -102,6 +116,8 @@ class AuthService {
       localStorage.setItem('currentUser', JSON.stringify(user));
     }
 
+    this.notifyAuthChange(true);
+
     return {
       user: this.currentUser,
       token: this.accessToken,
@@ -133,6 +149,8 @@ class AuthService {
       localStorage.setItem('refreshToken', tokens.refreshToken);
       localStorage.setItem('currentUser', JSON.stringify(user));
     }
+
+    this.notifyAuthChange(true);
 
     return {
       user: this.currentUser,
@@ -182,6 +200,8 @@ class AuthService {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('currentUser');
     }
+
+    this.notifyAuthChange(false);
   }
 
   getCurrentUser(): User | null {
@@ -200,19 +220,29 @@ class AuthService {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
+    if (!this.accessToken && this.refreshToken) {
+      try {
+        await this.refreshAccessToken();
+      } catch {
+        await this.logout();
+        throw new Error('Session expired');
+      }
+    }
+
+    if (!this.accessToken) {
+      await this.logout();
+      throw new Error('Not authenticated');
+    }
+
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string>),
     };
 
-    if (options.body instanceof FormData) {
-      // Don't set Content-Type for FormData - let browser handle it
-    } else if (!headers['Content-Type']) {
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
-    }
+    headers['Authorization'] = `Bearer ${this.accessToken}`;
 
     let response = await fetch(url, {
       ...options,
@@ -227,8 +257,12 @@ class AuthService {
           ...options,
           headers,
         });
-      } catch (error) {
-        throw error;
+
+        if (response.status === 401) {
+          await this.logout();
+        }
+      } catch {
+        await this.logout();
       }
     }
 
