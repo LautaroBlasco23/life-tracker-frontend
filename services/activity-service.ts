@@ -6,6 +6,7 @@ import type {
   ActivityStats,
   RecordActivityRequest,
   DayOfWeek,
+  ActivityFilter,
 } from '@/types';
 import { authService } from './auth-service';
 import { getConfig } from '@/lib/config';
@@ -45,9 +46,23 @@ class ActivityService {
     return getConfig().apiUrl;
   }
 
-  async getActivitiesByUserId(): Promise<Activity[]> {
+  private buildQueryString(filter?: ActivityFilter): string {
+    if (!filter) return '';
+
+    const params = new URLSearchParams();
+
+    if (filter.frequency) params.set('frequency', filter.frequency);
+    if (filter.dayTime) params.set('day_time', filter.dayTime);
+    if (filter.scheduledFor) params.set('scheduled_for', filter.scheduledFor);
+
+    const queryString = params.toString();
+    return queryString ? `?${queryString}` : '';
+  }
+
+  async getActivities(filter?: ActivityFilter): Promise<Activity[]> {
+    const queryString = this.buildQueryString(filter);
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/activities`
+      `${this.baseUrl}/activities${queryString}`
     );
 
     if (!response.ok) {
@@ -57,6 +72,10 @@ class ActivityService {
     const backendResponse: BackendListResponse<Activity> =
       await response.json();
     return backendResponse.data || [];
+  }
+
+  async getActivitiesByUserId(): Promise<Activity[]> {
+    return this.getActivities();
   }
 
   async getTodayActivities(): Promise<Activity[]> {

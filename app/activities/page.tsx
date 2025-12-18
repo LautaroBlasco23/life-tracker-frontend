@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
@@ -11,8 +11,11 @@ import { EditActivityModal } from '@/components/activity/edit-activity-modal';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activityService } from '@/services/activity-service';
 import type { Activity, DayTime } from '@/types/activity';
-import { Plus, Sun, CloudSun, Moon } from 'lucide-react';
+import { Plus, Sun, CloudSun, Moon, Filter, X } from 'lucide-react';
 import { showToast } from '@/lib/toast';
+import { Badge } from '@/components/ui/badge';
+import { ActivityFilter } from '@/types';
+import { ActivityFilterModal } from './modal/filterModal';
 
 const CATEGORY_CONFIG = {
   morning: {
@@ -38,21 +41,25 @@ const CATEGORY_CONFIG = {
   },
 } as const;
 
+type ViewMode = 'today' | 'filtered';
+
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('today');
+  const [activeFilter, setActiveFilter] = useState<ActivityFilter>({});
 
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     try {
       setIsLoading(true);
-      const userActivities = await activityService.getTodayActivities();
+      const userActivities =
+        viewMode === 'today'
+          ? await activityService.getTodayActivities()
+          : await activityService.getActivities(activeFilter);
       setActivities(userActivities);
     } catch (error) {
       console.error('Failed to load activities:', error);
@@ -65,6 +72,25 @@ export default function ActivitiesPage() {
     } finally {
       setIsLoading(false);
     }
+  }, [viewMode, activeFilter]);
+
+  useEffect(() => {
+    loadActivities();
+  }, [loadActivities]);
+
+  const handleApplyFilter = (filter: ActivityFilter) => {
+    const hasFilters = Object.keys(filter).length > 0;
+    setActiveFilter(filter);
+    setViewMode(hasFilters ? 'filtered' : 'today');
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilter({});
+    setViewMode('today');
+  };
+
+  const getActiveFilterCount = (): number => {
+    return Object.values(activeFilter).filter(Boolean).length;
   };
 
   const handleDeleteActivity = async (activityId: number) => {
@@ -88,7 +114,11 @@ export default function ActivitiesPage() {
   };
 
   const handleActivityCreated = (newActivity: Activity) => {
-    setActivities([newActivity, ...activities]);
+    if (viewMode === 'today') {
+      loadActivities();
+    } else {
+      setActivities([newActivity, ...activities]);
+    }
     setShowCreateModal(false);
   };
 
@@ -127,6 +157,26 @@ export default function ActivitiesPage() {
     {} as Record<DayTime, Activity[]>
   );
 
+  const filterCount = getActiveFilterCount();
+
+  const getPageTitle = (): string => {
+    if (viewMode === 'today') return "Today's Activities";
+    if (activeFilter.scheduledFor) {
+      const date = new Date(activeFilter.scheduledFor);
+      return `Activities for ${date.toLocaleDateString()}`;
+    }
+    return 'Filtered Activities';
+  };
+
+  const getPageDescription = (): string => {
+    if (viewMode === 'today')
+      return 'Track and complete your activities for today';
+    const parts: string[] = [];
+    if (activeFilter.frequency) parts.push(activeFilter.frequency);
+    if (activeFilter.dayTime) parts.push(activeFilter.dayTime);
+    return parts.length > 0 ? `Showing: ${parts.join(', ')}` : 'All activities';
+  };
+
   if (isLoading) {
     return (
       <AuthGuard>
@@ -145,14 +195,28 @@ export default function ActivitiesPage() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
-                Today's Activities
+                {getPageTitle()}
               </h1>
-              <p className="text-muted-foreground">
-                Track and complete your activities for today
-              </p>
+              <p className="text-muted-foreground">{getPageDescription()}</p>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {filterCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2"
@@ -163,6 +227,36 @@ export default function ActivitiesPage() {
             </div>
           </div>
 
+          {viewMode === 'filtered' && filterCount > 0 && (
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Active filters:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {activeFilter.frequency && (
+                  <Badge variant="secondary">{activeFilter.frequency}</Badge>
+                )}
+                {activeFilter.dayTime && (
+                  <Badge variant="secondary">{activeFilter.dayTime}</Badge>
+                )}
+                {activeFilter.scheduledFor && (
+                  <Badge variant="secondary">
+                    {new Date(activeFilter.scheduledFor).toLocaleDateString()}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="h-6 px-2 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear all
+                </Button>
+              </div>
+            </div>
+          )}
+
           {activities.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
@@ -171,16 +265,25 @@ export default function ActivitiesPage() {
                     <Plus className="h-8 w-8" />
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
-                    No activities for today
+                    {viewMode === 'today'
+                      ? 'No activities for today'
+                      : 'No activities match your filters'}
                   </h3>
                   <p>
-                    Create activities to see them appear here on their scheduled
-                    days.
+                    {viewMode === 'today'
+                      ? 'Create activities to see them appear here on their scheduled days.'
+                      : 'Try adjusting your filters or create new activities.'}
                   </p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>
-                  Create your first activity
-                </Button>
+                {viewMode === 'filtered' ? (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button onClick={() => setShowCreateModal(true)}>
+                    Create your first activity
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -244,6 +347,13 @@ export default function ActivitiesPage() {
             onOpenChange={setShowEditModal}
             activity={editingActivity}
             onActivityUpdated={handleActivityUpdated}
+          />
+
+          <ActivityFilterModal
+            open={showFilterModal}
+            onOpenChange={setShowFilterModal}
+            currentFilter={activeFilter}
+            onApplyFilter={handleApplyFilter}
           />
         </div>
       </div>
