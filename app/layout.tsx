@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { Analytics } from '@vercel/analytics/next';
@@ -30,7 +29,8 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
       <head>
-        <Script src="/env-config.js" strategy="beforeInteractive" />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/env-config.js" />
       </head>
       <body>
         <Suspense fallback={null}>
