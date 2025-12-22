@@ -1,5 +1,5 @@
 export interface TimeRecord {
-  id: string;
+  id: number;
   category: string;
   description: string;
   durationMinutes: number;
@@ -17,6 +17,14 @@ export interface UpdateTimeRecordInput {
   category?: string;
   description?: string;
   durationMinutes?: number;
+}
+
+export interface TimeStats {
+  totalMinutes: number;
+  recordCount: number;
+  categoryTotals: Record<string, number>;
+  topCategory?: string;
+  topCategoryMinutes?: number;
 }
 
 export const TIME_CATEGORIES = [
