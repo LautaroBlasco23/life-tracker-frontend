@@ -52,7 +52,7 @@ export default function TimePage() {
     loadRecords();
   }, [loadRecords]);
 
-  const handleDeleteRecord = async (recordId: string) => {
+  const handleDeleteRecord = async (recordId: number) => {
     try {
       await timeService.deleteRecord(recordId);
       setRecords(records.filter((r) => r.id !== recordId));

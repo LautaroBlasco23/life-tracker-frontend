@@ -1,79 +1,116 @@
-import {
+import type {
   CreateTimeRecordInput,
   TimeRecord,
+  TimeStats,
   UpdateTimeRecordInput,
 } from '@/types/time';
+import { authService } from './auth-service';
+import { getConfig } from '@/lib/config';
 
-let mockRecords: TimeRecord[] = [
-  {
-    id: '1',
-    category: 'Reading',
-    description: 'Finished chapter 5 of "Clean Code"',
-    durationMinutes: 45,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    category: 'Gaming',
-    description: 'Played Elden Ring',
-    durationMinutes: 120,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    category: 'Exercise',
-    description: 'Morning run in the park',
-    durationMinutes: 30,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 11);
+interface ApiResponse<T> {
+  message: string;
+  data: T;
+  count?: number;
 }
 
-export const timeService = {
-  async getRecords(): Promise<TimeRecord[]> {
-    return [...mockRecords];
-  },
+class TimeService {
+  private get baseUrl(): string {
+    return getConfig().apiUrl;
+  }
+
+  async getRecords(category?: string): Promise<TimeRecord[]> {
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    const query = params.toString();
+    const url = `${this.baseUrl}/time-records${query ? `?${query}` : ''}`;
+
+    const response = await authService.makeAuthenticatedRequest(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch time records');
+    }
+
+    const result: ApiResponse<TimeRecord[]> = await response.json();
+    return result.data ?? [];
+  }
+
+  async getRecord(id: number): Promise<TimeRecord> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/time-records/${id}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Time record not found');
+    }
+
+    const result: ApiResponse<TimeRecord> = await response.json();
+    return result.data;
+  }
 
   async createRecord(input: CreateTimeRecordInput): Promise<TimeRecord> {
-    const now = new Date().toISOString();
-    const newRecord: TimeRecord = {
-      id: generateId(),
-      ...input,
-      createdAt: now,
-      updatedAt: now,
-    };
-    mockRecords = [newRecord, ...mockRecords];
-    return newRecord;
-  },
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/time-records`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to create time record');
+    }
+
+    const result: ApiResponse<TimeRecord> = await response.json();
+    return result.data;
+  }
 
   async updateRecord(
-    id: string,
+    id: number,
     input: UpdateTimeRecordInput
   ): Promise<TimeRecord> {
-    const index = mockRecords.findIndex((r) => r.id === id);
-    if (index === -1) {
-      throw new Error('Record not found');
-    }
-    const updated: TimeRecord = {
-      ...mockRecords[index],
-      ...input,
-      updatedAt: new Date().toISOString(),
-    };
-    mockRecords[index] = updated;
-    return updated;
-  },
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/time-records/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }
+    );
 
-  async deleteRecord(id: string): Promise<void> {
-    const index = mockRecords.findIndex((r) => r.id === id);
-    if (index === -1) {
-      throw new Error('Record not found');
+    if (!response.ok) {
+      throw new Error('Failed to update time record');
     }
-    mockRecords = mockRecords.filter((r) => r.id !== id);
-  },
-};
+
+    const result: ApiResponse<TimeRecord> = await response.json();
+    return result.data;
+  }
+
+  async deleteRecord(id: number): Promise<void> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/time-records/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete time record');
+    }
+  }
+
+  async getStats(): Promise<TimeStats> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/time-records/stats`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch time stats');
+    }
+
+    const result: ApiResponse<TimeStats> = await response.json();
+    return result.data;
+  }
+}
+
+export const timeService = new TimeService();
