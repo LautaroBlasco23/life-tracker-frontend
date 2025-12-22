@@ -2,7 +2,7 @@ import {
   CreateTimeRecordInput,
   TimeRecord,
   UpdateTimeRecordInput,
-} from '@/types/timeTracker';
+} from '@/types/time';
 
 let mockRecords: TimeRecord[] = [
   {

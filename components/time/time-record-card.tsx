@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, Pencil, Trash2 } from 'lucide-react';
-import { TimeRecord } from '@/types/timeTracker';
+import { TimeRecord } from '@/types/time';
 
 interface TimeRecordCardProps {
   record: TimeRecord;

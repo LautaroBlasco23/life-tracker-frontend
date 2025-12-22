@@ -8,7 +8,7 @@ import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { TimeRecordCard } from '@/components/time/time-record-card';
 import { timeService } from '@/services/time-service';
-import type { TimeRecord } from '@/types/timeTracker';
+import type { TimeRecord } from '@/types/time';
 import { Plus, Clock, Timer, CalendarDays } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { CreateTimeRecordModal } from './modal/create-time-record-modal';
