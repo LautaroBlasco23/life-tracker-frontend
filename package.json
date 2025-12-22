@@ -9,7 +9,8 @@
     "start": "next start",
     "prepare": "husky install",
     "lint:ts": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md,json}": "prettier --write"
