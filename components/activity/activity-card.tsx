@@ -21,6 +21,7 @@ interface ActivityCardProps {
   onDelete: () => void;
   onEdit: () => void;
   onProgressUpdate: (updatedActivity: Activity) => void;
+  targetDate?: string; // ISO date string (YYYY-MM-DD), undefined means today
 }
 
 const CustomDropdown = ({
@@ -131,15 +132,48 @@ const DropdownMenuItem = ({
   );
 };
 
+function parseLocalDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isToday(dateString?: string): boolean {
+  if (!dateString) return true;
+  const target = parseLocalDate(dateString);
+  const today = new Date();
+  return (
+    target.getFullYear() === today.getFullYear() &&
+    target.getMonth() === today.getMonth() &&
+    target.getDate() === today.getDate()
+  );
+}
+
+function formatDateLabel(dateString?: string): string {
+  if (!dateString || isToday(dateString)) return 'today';
+  const date = parseLocalDate(dateString);
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function toCompletionDateISO(dateString?: string): string | undefined {
+  if (!dateString || isToday(dateString)) return undefined;
+  const date = parseLocalDate(dateString);
+  date.setHours(12, 0, 0, 0);
+  return date.toISOString();
+}
+
 export function ActivityCard({
   activity,
   onDelete,
   onEdit,
   onProgressUpdate,
+  targetDate,
 }: ActivityCardProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isReverting, setIsReverting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const isTargetToday = isToday(targetDate);
+  const dateLabel = formatDateLabel(targetDate);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -161,11 +195,12 @@ export function ActivityCard({
     onProgressUpdate(optimisticActivity);
 
     try {
-      await activityService.revertLastCompletion(activity.id);
+      const revertDate = toCompletionDateISO(targetDate);
+      await activityService.revertLastCompletion(activity.id, revertDate);
 
       showToast({
         title: 'Completion Reverted',
-        description: `Removed one completion from "${activity.title}".`,
+        description: `Removed one completion from "${activity.title}" for ${dateLabel}.`,
         variant: 'default',
       });
     } catch (error) {
@@ -198,7 +233,7 @@ export function ActivityCard({
     if (activity.isCompletedToday) {
       showToast({
         title: 'Activity Complete',
-        description: 'This activity is already completed for today!',
+        description: `This activity is already completed for ${dateLabel}!`,
         variant: 'default',
       });
       return;
@@ -219,13 +254,14 @@ export function ActivityCard({
     onProgressUpdate(optimisticActivity);
 
     try {
-      await activityService.recordActivity(activity.id);
+      const completionDate = toCompletionDateISO(targetDate);
+      await activityService.recordActivity(activity.id, { completionDate });
 
       const isNowCompleted = optimisticActivity.isCompletedToday;
       showToast({
         title: isNowCompleted ? 'Activity Completed!' : 'Progress Updated',
         description: isNowCompleted
-          ? `Great job! You've completed "${activity.title}" for today.`
+          ? `Great job! You've completed "${activity.title}" for ${dateLabel}.`
           : `Progress: ${optimisticActivity.todayCompletions}/${optimisticActivity.completionAmount}`,
         variant: 'default',
       });

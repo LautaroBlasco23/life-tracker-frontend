@@ -181,11 +181,20 @@ class ActivityService {
     activityId: number,
     data: RecordActivityRequest = {}
   ): Promise<ActivityRecord> {
+    const payload: RecordActivityRequest = {};
+
+    if (data.completionDate) {
+      payload.completionDate = data.completionDate;
+    }
+    if (data.notes) {
+      payload.notes = data.notes;
+    }
+
     const response = await authService.makeAuthenticatedRequest(
       `${this.baseUrl}/activities/${activityId}/record`,
       {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       }
     );
 
@@ -226,11 +235,17 @@ class ActivityService {
     return backendResponse.data;
   }
 
-  async revertLastCompletion(activityId: number): Promise<void> {
+  async revertLastCompletion(
+    activityId: number,
+    targetDate?: string
+  ): Promise<void> {
+    const body = targetDate ? JSON.stringify({ targetDate }) : undefined;
+
     const response = await authService.makeAuthenticatedRequest(
       `${this.baseUrl}/activities/${activityId}/revert`,
       {
         method: 'DELETE',
+        ...(body && { body }),
       }
     );
 
@@ -239,8 +254,11 @@ class ActivityService {
     }
   }
 
-  async incrementActivityProgress(activityId: number): Promise<Activity> {
-    await this.recordActivity(activityId);
+  async incrementActivityProgress(
+    activityId: number,
+    completionDate?: string
+  ): Promise<Activity> {
+    await this.recordActivity(activityId, { completionDate });
     return this.getActivity(activityId);
   }
 

@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -52,6 +51,9 @@ export default function ActivitiesPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>({});
+
+  const targetDate =
+    viewMode === 'filtered' ? activeFilter.scheduledFor : undefined;
 
   const loadActivities = useCallback(async () => {
     try {
@@ -159,10 +161,15 @@ export default function ActivitiesPage() {
 
   const filterCount = getActiveFilterCount();
 
+  function parseLocalDate(dateString: string): Date {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   const getPageTitle = (): string => {
     if (viewMode === 'today') return "Today's Activities";
     if (activeFilter.scheduledFor) {
-      const date = new Date(activeFilter.scheduledFor);
+      const date = parseLocalDate(activeFilter.scheduledFor);
       return `Activities for ${date.toLocaleDateString()}`;
     }
     return 'Filtered Activities';
@@ -241,7 +248,9 @@ export default function ActivitiesPage() {
                 )}
                 {activeFilter.scheduledFor && (
                   <Badge variant="secondary">
-                    {new Date(activeFilter.scheduledFor).toLocaleDateString()}
+                    {parseLocalDate(
+                      activeFilter.scheduledFor
+                    ).toLocaleDateString()}
                   </Badge>
                 )}
                 <Button
@@ -318,7 +327,6 @@ export default function ActivitiesPage() {
                           : 'activities'}
                       </span>
                     </div>
-
                     <div className="space-y-4">
                       {categoryActivities.map((activity) => (
                         <ActivityCard
@@ -327,6 +335,7 @@ export default function ActivitiesPage() {
                           onDelete={() => handleDeleteActivity(activity.id)}
                           onEdit={() => handleEditActivity(activity)}
                           onProgressUpdate={handleProgressUpdate}
+                          targetDate={targetDate}
                         />
                       ))}
                     </div>
@@ -341,14 +350,12 @@ export default function ActivitiesPage() {
             onOpenChange={setShowCreateModal}
             onActivityCreated={handleActivityCreated}
           />
-
           <EditActivityModal
             open={showEditModal}
             onOpenChange={setShowEditModal}
             activity={editingActivity}
             onActivityUpdated={handleActivityUpdated}
           />
-
           <ActivityFilterModal
             open={showFilterModal}
             onOpenChange={setShowFilterModal}
