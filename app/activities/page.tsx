@@ -1,20 +1,22 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
-import { ActivityCard } from '@/components/activity/activity-card';
 import { CreateActivityModal } from '@/components/activity/create-activity-modal';
 import { EditActivityModal } from '@/components/activity/edit-activity-modal';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activityService } from '@/services/activity-service';
-import type { Activity, DayTime } from '@/types/activity';
-import { Plus, Sun, CloudSun, Moon, Filter, X } from 'lucide-react';
+import type { Activity, DayTime, DayOfWeek } from '@/types/activity';
+import { Plus, Sun, CloudSun, Moon, Filter, X, Undo2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { ActivityFilter } from '@/types';
 import { ActivityFilterModal } from './modal/filterModal';
+import { CategoryHeader } from '@/components/ui/category/categoryHeader';
+import { EntityCard } from '@/components/ui/card/entityCard';
 
 const CATEGORY_CONFIG = {
   morning: {
@@ -42,6 +44,47 @@ const CATEGORY_CONFIG = {
 
 type ViewMode = 'today' | 'filtered';
 
+function parseLocalDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isToday(dateString?: string): boolean {
+  if (!dateString) return true;
+  const target = parseLocalDate(dateString);
+  const today = new Date();
+  return (
+    target.getFullYear() === today.getFullYear() &&
+    target.getMonth() === today.getMonth() &&
+    target.getDate() === today.getDate()
+  );
+}
+
+function formatDateLabel(dateString?: string): string {
+  if (!dateString || isToday(dateString)) return 'today';
+  const date = parseLocalDate(dateString);
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function toCompletionDateISO(dateString?: string): string | undefined {
+  if (!dateString || isToday(dateString)) return undefined;
+  const date = parseLocalDate(dateString);
+  date.setHours(12, 0, 0, 0);
+  return date.toISOString();
+}
+
+function formatDayFrequency(dayFrequency?: string): string | null {
+  if (!dayFrequency) return null;
+  try {
+    const days: DayOfWeek[] = JSON.parse(dayFrequency);
+    return days
+      .map((day) => day.charAt(0).toUpperCase() + day.slice(1))
+      .join(', ');
+  } catch {
+    return null;
+  }
+}
+
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,9 +94,11 @@ export default function ActivitiesPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>({});
+  const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
 
   const targetDate =
     viewMode === 'filtered' ? activeFilter.scheduledFor : undefined;
+  const dateLabel = formatDateLabel(targetDate);
 
   const loadActivities = useCallback(async () => {
     try {
@@ -112,6 +157,7 @@ export default function ActivitiesPage() {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+      throw error;
     }
   };
 
@@ -139,12 +185,102 @@ export default function ActivitiesPage() {
     setShowEditModal(true);
   };
 
-  const handleProgressUpdate = (updatedActivity: Activity) => {
+  const updateActivity = (updatedActivity: Activity) => {
     setActivities(
       activities.map((activity) =>
         activity.id === updatedActivity.id ? updatedActivity : activity
       )
     );
+  };
+
+  const handleRecordCompletion = async (activity: Activity) => {
+    if (activity.isCompletedToday) {
+      showToast({
+        title: 'Activity Complete',
+        description: `This activity is already completed for ${dateLabel}!`,
+        variant: 'default',
+      });
+      return;
+    }
+
+    setProcessingIds((prev) => new Set(prev).add(activity.id));
+
+    const optimisticActivity: Activity = {
+      ...activity,
+      todayCompletions: activity.todayCompletions + 1,
+      isCompletedToday:
+        activity.todayCompletions + 1 >= activity.completionAmount,
+    };
+    updateActivity(optimisticActivity);
+
+    try {
+      const completionDate = toCompletionDateISO(targetDate);
+      await activityService.recordActivity(activity.id, { completionDate });
+
+      const isNowCompleted = optimisticActivity.isCompletedToday;
+      showToast({
+        title: isNowCompleted ? 'Activity Completed!' : 'Progress Updated',
+        description: isNowCompleted
+          ? `Great job! You've completed "${activity.title}" for ${dateLabel}.`
+          : `Progress: ${optimisticActivity.todayCompletions}/${optimisticActivity.completionAmount}`,
+        variant: 'default',
+      });
+    } catch (error) {
+      updateActivity(activity);
+      showToast({
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to record completion',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activity.id);
+        return next;
+      });
+    }
+  };
+
+  const handleRevertCompletion = async (activity: Activity) => {
+    setProcessingIds((prev) => new Set(prev).add(activity.id));
+
+    const newCompletions = Math.max(0, activity.todayCompletions - 1);
+    const optimisticActivity: Activity = {
+      ...activity,
+      todayCompletions: newCompletions,
+      isCompletedToday: newCompletions >= activity.completionAmount,
+    };
+    updateActivity(optimisticActivity);
+
+    try {
+      const revertDate = toCompletionDateISO(targetDate);
+      await activityService.revertLastCompletion(activity.id, revertDate);
+
+      showToast({
+        title: 'Completion Reverted',
+        description: `Removed one completion from "${activity.title}" for ${dateLabel}.`,
+        variant: 'default',
+      });
+    } catch (error) {
+      updateActivity(activity);
+      showToast({
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to revert completion',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activity.id);
+        return next;
+      });
+    }
   };
 
   const activitiesByCategory = activities.reduce(
@@ -160,11 +296,6 @@ export default function ActivitiesPage() {
   );
 
   const filterCount = getActiveFilterCount();
-
-  function parseLocalDate(dateString: string): Date {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  }
 
   const getPageTitle = (): string => {
     if (viewMode === 'today') return "Today's Activities";
@@ -182,6 +313,17 @@ export default function ActivitiesPage() {
     if (activeFilter.frequency) parts.push(activeFilter.frequency);
     if (activeFilter.dayTime) parts.push(activeFilter.dayTime);
     return parts.length > 0 ? `Showing: ${parts.join(', ')}` : 'All activities';
+  };
+
+  const buildActivityBadges = (activity: Activity) => {
+    const badges: Array<{ label: string; variant: 'outline' | 'default' }> = [
+      { label: activity.frequency, variant: 'outline' },
+    ];
+    const formattedDays = formatDayFrequency(activity.dayFrequency);
+    if (activity.frequency === 'weekly' && formattedDays) {
+      badges.push({ label: formattedDays, variant: 'outline' });
+    }
+    return badges;
   };
 
   if (isLoading) {
@@ -300,42 +442,76 @@ export default function ActivitiesPage() {
               {(Object.keys(CATEGORY_CONFIG) as DayTime[]).map((dayTime) => {
                 const categoryActivities = activitiesByCategory[dayTime] || [];
                 const config = CATEGORY_CONFIG[dayTime];
-                const IconComponent = config.icon;
 
                 if (categoryActivities.length === 0) return null;
 
                 return (
                   <div key={dayTime} className="space-y-4">
-                    <div
-                      className={`flex items-center gap-4 py-4 border-l-4 ${config.accentColor} pl-4`}
-                    >
-                      <IconComponent
-                        className={`h-6 w-6 ${config.iconColor}`}
-                      />
-                      <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-foreground">
-                          {config.label}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          {config.description}
-                        </p>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {categoryActivities.length}{' '}
-                        {categoryActivities.length === 1
-                          ? 'activity'
-                          : 'activities'}
-                      </span>
-                    </div>
+                    <CategoryHeader
+                      icon={config.icon}
+                      label={config.label}
+                      description={config.description}
+                      accentColor={config.accentColor}
+                      iconColor={config.iconColor}
+                      summaryValue={categoryActivities.length.toString()}
+                      summaryLabel="Total"
+                      itemCount={categoryActivities.length}
+                      itemName="activity"
+                    />
                     <div className="space-y-4">
                       {categoryActivities.map((activity) => (
-                        <ActivityCard
+                        <EntityCard
                           key={activity.id}
-                          activity={activity}
-                          onDelete={() => handleDeleteActivity(activity.id)}
+                          title={activity.title}
+                          subtitle={activity.description}
+                          badges={buildActivityBadges(activity)}
+                          progress={{
+                            current: activity.todayCompletions,
+                            total: activity.completionAmount,
+                            completedLabel: 'Complete',
+                            incompleteHint: 'Tap to complete',
+                          }}
+                          isCompleted={activity.isCompletedToday}
+                          onClick={() => handleRecordCompletion(activity)}
                           onEdit={() => handleEditActivity(activity)}
-                          onProgressUpdate={handleProgressUpdate}
-                          targetDate={targetDate}
+                          onDelete={() => handleDeleteActivity(activity.id)}
+                          isProcessing={processingIds.has(activity.id)}
+                          extraMenuItems={
+                            activity.todayCompletions > 0
+                              ? [
+                                  {
+                                    label: 'Revert Last',
+                                    icon: Undo2,
+                                    onClick: () =>
+                                      handleRevertCompletion(activity),
+                                    disabled: processingIds.has(activity.id),
+                                  },
+                                ]
+                              : undefined
+                          }
+                          deleteModal={{
+                            title: 'Delete Activity',
+                            itemName: activity.title,
+                            confirmLabel: 'Delete Activity',
+                            itemDetails: (
+                              <div className="text-sm">
+                                <div className="font-medium text-foreground mb-1">
+                                  {activity.title}
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  {activity.description && (
+                                    <div className="mb-1">
+                                      {activity.description}
+                                    </div>
+                                  )}
+                                  <div>
+                                    {activity.frequency} • {activity.dayTime} •
+                                    Target: {activity.completionAmount}
+                                  </div>
+                                </div>
+                              </div>
+                            ),
+                          }}
                         />
                       ))}
                     </div>

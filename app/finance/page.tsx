@@ -2,36 +2,43 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Transaction, TransactionType, Category } from '@/types';
-import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Calendar } from 'lucide-react';
 import { financeService } from '@/services/financeService';
-import { TransactionCard } from '@/components/finance/transactionCardComponent';
 import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
 import { EditTransactionModal } from '@/components/finance/editTransactionModal';
 import { showToast } from '@/lib/toast';
+import { CategoryHeader } from '@/components/ui/category/categoryHeader';
+import { EntityCard } from '@/components/ui/card/entityCard';
 
 const TYPE_CONFIG = {
   income: {
     label: 'Income',
     icon: TrendingUp,
     description: 'Money coming in',
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-50 dark:bg-green-950/20',
-    borderColor: 'border-green-200 dark:border-green-800',
+    accentColor: 'border-green-400',
+    iconColor: 'text-green-500',
   },
   outcome: {
     label: 'Expenses',
     icon: TrendingDown,
     description: 'Money going out',
-    color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-50 dark:bg-red-950/20',
-    borderColor: 'border-red-200 dark:border-red-800',
+    accentColor: 'border-red-400',
+    iconColor: 'text-red-500',
   },
 } as const;
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,6 +92,7 @@ export default function FinancePage() {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+      throw error;
     }
   };
 
@@ -270,7 +278,6 @@ export default function FinancePage() {
               {(Object.keys(TYPE_CONFIG) as TransactionType[]).map((type) => {
                 const typeTransactions = transactionsByType[type] || [];
                 const config = TYPE_CONFIG[type];
-                const IconComponent = config.icon;
 
                 if (typeTransactions.length === 0) return null;
 
@@ -281,48 +288,85 @@ export default function FinancePage() {
 
                 return (
                   <div key={type} className="space-y-4">
-                    <Card className="bg-muted/30">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-3 text-xl">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <IconComponent className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <div className="text-foreground">
-                              {config.label}
-                            </div>
-                            <div className="text-sm font-normal text-muted-foreground">
-                              {config.description}
-                            </div>
-                          </div>
-                          <div className="ml-auto text-right">
-                            <div
-                              className={`text-lg font-bold ${config.color}`}
-                            >
-                              ${typeTotal.toFixed(2)}
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {typeTransactions.length}{' '}
-                              {typeTransactions.length === 1
-                                ? 'transaction'
-                                : 'transactions'}
-                            </span>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                    </Card>
+                    <CategoryHeader
+                      icon={config.icon}
+                      label={config.label}
+                      description={config.description}
+                      accentColor={config.accentColor}
+                      iconColor={config.iconColor}
+                      summaryValue={`$${typeTotal.toFixed(2)}`}
+                      summaryLabel="Total"
+                      itemCount={typeTransactions.length}
+                      itemName="transaction"
+                    />
 
                     <div className="space-y-4">
-                      {typeTransactions.map((transaction) => (
-                        <TransactionCard
-                          key={transaction.id}
-                          transaction={transaction}
-                          onDelete={() =>
-                            handleDeleteTransaction(transaction.id)
-                          }
-                          onEdit={() => handleEditTransaction(transaction)}
-                        />
-                      ))}
+                      {typeTransactions.map((transaction) => {
+                        const isIncome = transaction.type === 'income';
+                        return (
+                          <EntityCard
+                            key={transaction.id}
+                            title={transaction.categoryName}
+                            subtitle={transaction.description}
+                            badges={[
+                              {
+                                label: transaction.type,
+                                variant: isIncome ? 'default' : 'destructive',
+                              },
+                              {
+                                label: transaction.subcategoryName,
+                                variant: 'outline',
+                              },
+                            ]}
+                            metadata={
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{formatDate(transaction.date)}</span>
+                                </div>
+                                <span
+                                  className={`font-semibold ${
+                                    isIncome
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}
+                                >
+                                  {isIncome ? '+' : '-'}$
+                                  {transaction.amount.toFixed(2)}
+                                </span>
+                              </div>
+                            }
+                            onEdit={() => handleEditTransaction(transaction)}
+                            onDelete={() =>
+                              handleDeleteTransaction(transaction.id)
+                            }
+                            deleteModal={{
+                              title: 'Delete Transaction',
+                              itemName: transaction.categoryName,
+                              confirmLabel: 'Delete Transaction',
+                              itemDetails: (
+                                <div className="text-sm">
+                                  <div className="font-medium text-foreground mb-1">
+                                    {transaction.categoryName}
+                                  </div>
+                                  <div className="text-muted-foreground text-xs">
+                                    {transaction.description && (
+                                      <div className="mb-1">
+                                        {transaction.description}
+                                      </div>
+                                    )}
+                                    <div>
+                                      {transaction.type} •{' '}
+                                      {transaction.subcategoryName} • $
+                                      {transaction.amount.toFixed(2)}
+                                    </div>
+                                  </div>
+                                </div>
+                              ),
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 );

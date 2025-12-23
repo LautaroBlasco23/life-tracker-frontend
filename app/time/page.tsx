@@ -2,17 +2,32 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { TimeRecordCard } from '@/components/time/time-record-card';
 import { timeService } from '@/services/time-service';
 import type { TimeRecord } from '@/types/time';
 import { Plus, Clock, Timer, CalendarDays } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { CreateTimeRecordModal } from './modal/create-time-record-modal';
 import { EditTimeRecordModal } from './modal/edit-time-record-modal';
+import { CategoryHeader } from '@/components/ui/category/categoryHeader';
+import { EntityCard } from '@/components/ui/card/entityCard';
+
+const CATEGORY_COLORS: Record<
+  string,
+  { accentColor: string; iconColor: string }
+> = {
+  Work: { accentColor: 'border-violet-400', iconColor: 'text-violet-500' },
+  Personal: {
+    accentColor: 'border-emerald-400',
+    iconColor: 'text-emerald-500',
+  },
+  Health: { accentColor: 'border-rose-400', iconColor: 'text-rose-500' },
+  Learning: { accentColor: 'border-amber-400', iconColor: 'text-amber-500' },
+  default: { accentColor: 'border-sky-400', iconColor: 'text-sky-500' },
+};
 
 function formatTotalTime(minutes: number): string {
   if (minutes === 0) return '0h 0m';
@@ -21,6 +36,28 @@ function formatTotalTime(minutes: number): string {
   if (hours === 0) return `${remainingMinutes}m`;
   if (remainingMinutes === 0) return `${hours}h`;
   return `${hours}h ${remainingMinutes}m`;
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+function formatRecordDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export default function TimePage() {
@@ -67,6 +104,7 @@ export default function TimePage() {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+      throw error;
     }
   };
 
@@ -245,40 +283,65 @@ export default function TimePage() {
                     (sum, r) => sum + r.durationMinutes,
                     0
                   );
+                  const colors =
+                    CATEGORY_COLORS[category] ?? CATEGORY_COLORS.default;
 
                   return (
                     <div key={category} className="space-y-4">
-                      <Card className="bg-muted/30">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="flex items-center gap-3 text-xl">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                              <Clock className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <div className="text-foreground">{category}</div>
-                            </div>
-                            <div className="ml-auto text-right">
-                              <div className="text-lg font-bold text-primary">
-                                {formatTotalTime(categoryTotal)}
-                              </div>
-                              <span className="text-sm text-muted-foreground">
-                                {categoryRecords.length}{' '}
-                                {categoryRecords.length === 1
-                                  ? 'entry'
-                                  : 'entries'}
-                              </span>
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                      </Card>
+                      <CategoryHeader
+                        icon={Clock}
+                        label={category}
+                        accentColor={colors.accentColor}
+                        iconColor={colors.iconColor}
+                        summaryValue={formatTotalTime(categoryTotal)}
+                        summaryLabel="Total"
+                        itemCount={categoryRecords.length}
+                        itemName="entry"
+                      />
 
                       <div className="space-y-4">
                         {categoryRecords.map((record) => (
-                          <TimeRecordCard
+                          <EntityCard
                             key={record.id}
-                            record={record}
+                            title={record.description}
+                            badges={[
+                              { label: record.category, variant: 'default' },
+                            ]}
+                            metadata={
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>
+                                  {formatDuration(record.durationMinutes)}
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  {formatRecordDate(record.createdAt)}
+                                </span>
+                              </div>
+                            }
                             onEdit={() => handleEditRecord(record)}
                             onDelete={() => handleDeleteRecord(record.id)}
+                            deleteModal={{
+                              title: 'Delete Time Entry',
+                              itemName: record.description,
+                              confirmLabel: 'Delete Entry',
+                              itemDetails: (
+                                <div className="text-sm">
+                                  <div className="font-medium text-foreground mb-1">
+                                    {record.description}
+                                  </div>
+                                  <div className="text-muted-foreground text-xs">
+                                    <div>
+                                      {record.category} •{' '}
+                                      {formatDuration(record.durationMinutes)}
+                                    </div>
+                                    <div className="mt-1">
+                                      {formatRecordDate(record.createdAt)}
+                                    </div>
+                                  </div>
+                                </div>
+                              ),
+                            }}
                           />
                         ))}
                       </div>
