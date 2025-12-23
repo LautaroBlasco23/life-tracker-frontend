@@ -409,7 +409,7 @@ export default function ActivitiesPage() {
           )}
 
           {activities.length === 0 ? (
-            <Card className="text-center py-12">
+            <Card className="text-center py-12 bg-muted/30">
               <CardContent>
                 <div className="text-muted-foreground mb-4">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
