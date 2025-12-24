@@ -136,8 +136,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-6">
-            {/* Profile Picture Section */}
-            <Card>
+            <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>Profile Picture</CardTitle>
                 <CardDescription>Update your profile picture</CardDescription>
@@ -179,8 +178,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Personal Information Section */}
-            <Card>
+            <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>Update your personal details</CardDescription>
@@ -196,7 +194,6 @@ export default function ProfilePage() {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
-                        className="bg-input border-border"
                       />
                     </div>
                     <div className="space-y-2">
@@ -207,7 +204,6 @@ export default function ProfilePage() {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required
-                        className="bg-input border-border"
                       />
                     </div>
                   </div>
@@ -219,7 +215,6 @@ export default function ProfilePage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="bg-input border-border"
                     />
                   </div>
                   <Button type="submit" disabled={isSaving}>
@@ -229,8 +224,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Account Information Section */}
-            <Card>
+            <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
                 <CardDescription>View your account details</CardDescription>
