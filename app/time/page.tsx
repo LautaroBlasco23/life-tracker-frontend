@@ -175,8 +175,32 @@ export default function TimePage() {
     <AuthGuard>
       <div className="min-h-screen bg-background pb-20">
         <Navigation />
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="flex justify-between items-center mb-8">
+        <div className="max-w-4xl mx-auto p-4 md:p-6">
+          {/* Mobile: Stacked layout */}
+          <div className="flex flex-col gap-4 mb-8 md:hidden">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground mb-1">
+                Time Tracking
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Log and review how you spend your time
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button
+                size="sm"
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Log Time
+              </Button>
+            </div>
+          </div>
+
+          {/* Desktop: Side-by-side layout */}
+          <div className="hidden md:flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
                 Time Tracking
