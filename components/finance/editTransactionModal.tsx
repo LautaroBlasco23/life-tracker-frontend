@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { financeService } from '@/services/financeService';
+import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
 import type { Transaction, TransactionType, Category } from '@/types';
 

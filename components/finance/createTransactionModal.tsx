@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Transaction, TransactionType, Category } from '@/types';
-import { financeService } from '@/services/financeService';
+import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
 
 interface CreateTransactionModalProps {

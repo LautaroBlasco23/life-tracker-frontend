@@ -8,7 +8,7 @@ import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Transaction, TransactionType, Category } from '@/types';
 import { Plus, TrendingUp, TrendingDown, Wallet, Calendar } from 'lucide-react';
-import { financeService } from '@/services/financeService';
+import { financeService } from '@/services/finance-service';
 import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
 import { EditTransactionModal } from '@/components/finance/editTransactionModal';
 import { showToast } from '@/lib/toast';
