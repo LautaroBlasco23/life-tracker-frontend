@@ -105,29 +105,29 @@ export function EntityCard({
         onClick={handleCardClick}
       >
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-2 mb-1 flex-wrap">
                 <CardTitle
-                  className={`text-lg font-medium ${
+                  className={`text-base sm:text-lg font-medium ${
                     isCompleted
                       ? 'text-green-600 dark:text-green-400'
                       : 'text-foreground'
-                  }`}
+                  } break-words`}
                 >
                   {title}
                 </CardTitle>
                 {isCompleted && progress && (
                   <Badge
                     variant="default"
-                    className="bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/50"
+                    className="bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/50 shrink-0"
                   >
                     {progress.completedLabel ?? 'Complete'}
                   </Badge>
                 )}
               </div>
               {subtitle && (
-                <CardDescription className="mt-1 text-muted-foreground">
+                <CardDescription className="mt-1 text-sm text-muted-foreground break-words">
                   {subtitle}
                 </CardDescription>
               )}
@@ -159,9 +159,9 @@ export function EntityCard({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 space-y-3">
           {progress && (
-            <div className="mb-3">
+            <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">
                   {progress.current}/{progress.total}
@@ -176,18 +176,21 @@ export function EntityCard({
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            {metadata && <div>{metadata}</div>}
-            {badges.length > 0 && (
-              <div className="flex items-center gap-2 ml-auto">
-                {badges.map((badge, index) => (
-                  <Badge key={index} variant={badge.variant ?? 'outline'}>
-                    {badge.label}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
+          {metadata && <div className="w-full">{metadata}</div>}
+
+          {badges.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {badges.map((badge, index) => (
+                <Badge
+                  key={index}
+                  variant={badge.variant ?? 'outline'}
+                  className="text-xs"
+                >
+                  {badge.label}
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
