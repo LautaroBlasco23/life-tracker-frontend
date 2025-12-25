@@ -13,19 +13,28 @@ interface ApiResponse<T> {
   count?: number;
 }
 
+interface GetRecordsParams {
+  category?: string;
+  month?: number;
+  year?: number;
+}
+
 class TimeService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
   }
 
-  async getRecords(category?: string): Promise<TimeRecord[]> {
-    const params = new URLSearchParams();
-    if (category) {
-      params.set('category', category);
-    }
-    const query = params.toString();
-    const url = `${this.baseUrl}/time-records${query ? `?${query}` : ''}`;
+  async getRecords(params?: GetRecordsParams): Promise<TimeRecord[]> {
+    const searchParams = new URLSearchParams();
 
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.month !== undefined)
+      searchParams.set('month', params.month.toString());
+    if (params?.year !== undefined)
+      searchParams.set('year', params.year.toString());
+
+    const query = searchParams.toString();
+    const url = `${this.baseUrl}/time-records${query ? `?${query}` : ''}`;
     const response = await authService.makeAuthenticatedRequest(url);
 
     if (!response.ok) {

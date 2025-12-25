@@ -8,12 +8,14 @@ import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { timeService } from '@/services/time-service';
 import type { TimeRecord } from '@/types/time';
-import { Plus, Clock, Timer, CalendarDays } from 'lucide-react';
+import { Plus, Clock, Timer, CalendarDays, Filter, X } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { CreateTimeRecordModal } from './modal/create-time-record-modal';
 import { EditTimeRecordModal } from './modal/edit-time-record-modal';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
+import { Badge } from '@/components/ui/badge';
+import { TimeFilterModal, TimeRecordFilter } from './modal/filterModal';
 
 const CATEGORY_COLORS: Record<
   string,
@@ -28,6 +30,21 @@ const CATEGORY_COLORS: Record<
   Learning: { accentColor: 'border-amber-400', iconColor: 'text-amber-500' },
   default: { accentColor: 'border-sky-400', iconColor: 'text-sky-500' },
 };
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 function formatTotalTime(minutes: number): string {
   if (minutes === 0) return '0h 0m';
@@ -65,12 +82,18 @@ export default function TimePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TimeRecord | null>(null);
+  const [activeFilter, setActiveFilter] = useState<TimeRecordFilter>({});
 
   const loadRecords = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await timeService.getRecords();
+      const data = await timeService.getRecords({
+        category: activeFilter.category,
+        month: activeFilter.month,
+        year: activeFilter.year,
+      });
       setRecords(data);
     } catch (error) {
       console.error('Failed to load records:', error);
@@ -83,11 +106,40 @@ export default function TimePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeFilter]);
 
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
+
+  const handleApplyFilter = (filter: TimeRecordFilter) => {
+    setActiveFilter(filter);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilter({});
+  };
+
+  const getActiveFilterCount = (): number => {
+    let count = 0;
+    if (activeFilter.month !== undefined || activeFilter.year !== undefined)
+      count++;
+    if (activeFilter.category !== undefined) count++;
+    return count;
+  };
+
+  const getFilterBadgeText = (): string | null => {
+    if (activeFilter.month !== undefined && activeFilter.year !== undefined) {
+      return `${MONTH_NAMES[activeFilter.month - 1]} ${activeFilter.year}`;
+    }
+    if (activeFilter.month !== undefined) {
+      return MONTH_NAMES[activeFilter.month - 1];
+    }
+    if (activeFilter.year !== undefined) {
+      return activeFilter.year.toString();
+    }
+    return null;
+  };
 
   const handleDeleteRecord = async (recordId: number) => {
     try {
@@ -109,7 +161,7 @@ export default function TimePage() {
   };
 
   const handleRecordCreated = (newRecord: TimeRecord) => {
-    setRecords([newRecord, ...records]);
+    loadRecords();
     setShowCreateModal(false);
   };
 
@@ -161,6 +213,8 @@ export default function TimePage() {
     );
   }, [records]);
 
+  const filterCount = getActiveFilterCount();
+
   if (isLoading) {
     return (
       <AuthGuard>
@@ -176,7 +230,6 @@ export default function TimePage() {
       <div className="min-h-screen bg-background pb-20">
         <Navigation />
         <div className="max-w-4xl mx-auto p-4 md:p-6">
-          {/* Mobile: Stacked layout */}
           <div className="flex flex-col gap-4 mb-8 md:hidden">
             <div>
               <h1 className="text-2xl font-semibold text-foreground mb-1">
@@ -189,6 +242,23 @@ export default function TimePage() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {filterCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
                 size="sm"
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2"
@@ -199,7 +269,6 @@ export default function TimePage() {
             </div>
           </div>
 
-          {/* Desktop: Side-by-side layout */}
           <div className="hidden md:flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
@@ -212,6 +281,22 @@ export default function TimePage() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button
+                variant="outline"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {filterCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2"
               >
@@ -220,6 +305,31 @@ export default function TimePage() {
               </Button>
             </div>
           </div>
+
+          {filterCount > 0 && (
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                Active filters:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {getFilterBadgeText() && (
+                  <Badge variant="secondary">{getFilterBadgeText()}</Badge>
+                )}
+                {activeFilter.category && (
+                  <Badge variant="secondary">{activeFilter.category}</Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="h-6 px-2 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear all
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card className="bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800">
@@ -290,13 +400,25 @@ export default function TimePage() {
                     <Clock className="h-8 w-8" />
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
-                    No time entries yet
+                    {filterCount > 0
+                      ? 'No time entries match your filters'
+                      : 'No time entries yet'}
                   </h3>
-                  <p>Start logging your time to see your records here.</p>
+                  <p>
+                    {filterCount > 0
+                      ? 'Try adjusting your filters or log new time entries.'
+                      : 'Start logging your time to see your records here.'}
+                  </p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>
-                  Log your first entry
-                </Button>
+                {filterCount > 0 ? (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button onClick={() => setShowCreateModal(true)}>
+                    Log your first entry
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -387,6 +509,13 @@ export default function TimePage() {
             onOpenChange={setShowEditModal}
             record={editingRecord}
             onRecordUpdated={handleRecordUpdated}
+          />
+
+          <TimeFilterModal
+            open={showFilterModal}
+            onOpenChange={setShowFilterModal}
+            currentFilter={activeFilter}
+            onApplyFilter={handleApplyFilter}
           />
         </div>
       </div>
