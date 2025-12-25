@@ -22,6 +22,7 @@ import {
 import type { Transaction, TransactionType, Category } from '@/types';
 import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
+import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
 
 interface CreateTransactionModalProps {
   open: boolean;
@@ -64,10 +65,17 @@ export function CreateTransactionModal({
     setSubcategoryId(null);
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatInputValue(e.target.value);
+    setAmount(formatted);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const amountValue = parseFloat(amount);
+    const numericAmount = parseInputValue(amount);
+    const amountValue = parseFloat(numericAmount);
+
     if (isNaN(amountValue) || amountValue <= 0) {
       showToast({
         title: 'Validation error',
@@ -157,12 +165,11 @@ export function CreateTransactionModal({
               <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
                 required
                 className="bg-input border-border"
               />

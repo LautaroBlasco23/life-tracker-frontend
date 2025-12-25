@@ -22,6 +22,7 @@ import {
 import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
 import type { Transaction, TransactionType, Category } from '@/types';
+import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
 
 interface EditTransactionModalProps {
   open: boolean;
@@ -49,7 +50,7 @@ export function EditTransactionModal({
   useEffect(() => {
     if (transaction && open) {
       setDescription(transaction.description || '');
-      setAmount(transaction.amount.toString());
+      setAmount(formatInputValue(Math.floor(transaction.amount).toString()));
       setType(transaction.type);
       setCategoryId(transaction.categoryId);
       setSubcategoryId(transaction.subcategoryId);
@@ -82,11 +83,18 @@ export function EditTransactionModal({
     setSubcategoryId(null);
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatInputValue(e.target.value);
+    setAmount(formatted);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction) return;
 
-    const amountValue = parseFloat(amount);
+    const numericAmount = parseInputValue(amount);
+    const amountValue = parseFloat(numericAmount);
+
     if (isNaN(amountValue) || amountValue <= 0) {
       showToast({
         title: 'Validation error',
@@ -180,12 +188,11 @@ export function EditTransactionModal({
               <Label htmlFor="edit-amount">Amount</Label>
               <Input
                 id="edit-amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
                 required
                 className="bg-input border-border"
               />
