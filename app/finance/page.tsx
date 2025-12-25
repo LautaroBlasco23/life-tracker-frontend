@@ -342,13 +342,15 @@ export default function FinancePage() {
                               },
                             ]}
                             metadata={
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  <span>{formatDate(transaction.date)}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Calendar className="h-4 w-4 shrink-0" />
+                                  <span className="truncate">
+                                    {formatDate(transaction.date)}
+                                  </span>
                                 </div>
                                 <span
-                                  className={`font-semibold ${
+                                  className={`font-semibold text-base sm:text-sm ${
                                     isIncome
                                       ? 'text-green-600 dark:text-green-400'
                                       : 'text-red-600 dark:text-red-400'
