@@ -1,13 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { Transaction, TransactionType, Category } from '@/types';
-import { Plus, TrendingUp, TrendingDown, Wallet, Calendar } from 'lucide-react';
+import {
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Calendar,
+  Filter,
+  X,
+} from 'lucide-react';
 import { financeService } from '@/services/finance-service';
 import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
 import { EditTransactionModal } from '@/components/finance/editTransactionModal';
@@ -15,6 +23,8 @@ import { showToast } from '@/lib/toast';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { formatCurrency } from '@/utils/formatNumbers';
+import { Badge } from '@/components/ui/badge';
+import { TransactionFilter, TransactionFilterModal } from './modal/filterModal';
 
 const TYPE_CONFIG = {
   income: {
@@ -33,6 +43,21 @@ const TYPE_CONFIG = {
   },
 } as const;
 
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
     month: 'short',
@@ -47,18 +72,20 @@ export default function FinancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+  const [activeFilter, setActiveFilter] = useState<TransactionFilter>({});
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [userTransactions, allCategories] = await Promise.all([
-        financeService.getTransactions(),
+        financeService.getTransactions({
+          month: activeFilter.month,
+          year: activeFilter.year,
+          categoryId: activeFilter.categoryId,
+        }),
         financeService.getCategories(),
       ]);
       setTransactions(userTransactions);
@@ -74,6 +101,26 @@ export default function FinancePage() {
     } finally {
       setIsLoading(false);
     }
+  }, [activeFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleApplyFilter = (filter: TransactionFilter) => {
+    setActiveFilter(filter);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilter({});
+  };
+
+  const getActiveFilterCount = (): number => {
+    let count = 0;
+    if (activeFilter.month !== undefined || activeFilter.year !== undefined)
+      count++;
+    if (activeFilter.categoryId !== undefined) count++;
+    return count;
   };
 
   const handleDeleteTransaction = async (transactionId: string) => {
@@ -98,7 +145,7 @@ export default function FinancePage() {
   };
 
   const handleTransactionCreated = (newTransaction: Transaction) => {
-    setTransactions([newTransaction, ...transactions]);
+    loadData();
     setShowCreateModal(false);
   };
 
@@ -140,6 +187,20 @@ export default function FinancePage() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalOutcome;
+  const filterCount = getActiveFilterCount();
+
+  const getFilterBadgeText = (): string | null => {
+    if (activeFilter.month !== undefined && activeFilter.year !== undefined) {
+      return `${MONTH_NAMES[activeFilter.month - 1]} ${activeFilter.year}`;
+    }
+    if (activeFilter.month !== undefined) {
+      return MONTH_NAMES[activeFilter.month - 1];
+    }
+    if (activeFilter.year !== undefined) {
+      return activeFilter.year.toString();
+    }
+    return null;
+  };
 
   if (isLoading) {
     return (
@@ -168,6 +229,23 @@ export default function FinancePage() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {filterCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
                 size="sm"
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2"
@@ -190,6 +268,22 @@ export default function FinancePage() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button
+                variant="outline"
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {filterCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2"
               >
@@ -198,6 +292,36 @@ export default function FinancePage() {
               </Button>
             </div>
           </div>
+
+          {filterCount > 0 && (
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                Active filters:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {getFilterBadgeText() && (
+                  <Badge variant="secondary">{getFilterBadgeText()}</Badge>
+                )}
+                {activeFilter.categoryId !== undefined && (
+                  <Badge variant="secondary">
+                    {
+                      categories.find((c) => c.id === activeFilter.categoryId)
+                        ?.name
+                    }
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="h-6 px-2 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear all
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
@@ -287,13 +411,25 @@ export default function FinancePage() {
                     <Plus className="h-8 w-8" />
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
-                    No transactions yet
+                    {filterCount > 0
+                      ? 'No transactions match your filters'
+                      : 'No transactions yet'}
                   </h3>
-                  <p>Get started by creating your first transaction.</p>
+                  <p>
+                    {filterCount > 0
+                      ? 'Try adjusting your filters or create new transactions.'
+                      : 'Get started by creating your first transaction.'}
+                  </p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>
-                  Create your first transaction
-                </Button>
+                {filterCount > 0 ? (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button onClick={() => setShowCreateModal(true)}>
+                    Create your first transaction
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -411,6 +547,14 @@ export default function FinancePage() {
             onOpenChange={setShowEditModal}
             transaction={editingTransaction}
             onTransactionUpdated={handleTransactionUpdated}
+            categories={categories}
+          />
+
+          <TransactionFilterModal
+            open={showFilterModal}
+            onOpenChange={setShowFilterModal}
+            currentFilter={activeFilter}
+            onApplyFilter={handleApplyFilter}
             categories={categories}
           />
         </div>
