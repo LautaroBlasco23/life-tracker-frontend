@@ -17,6 +17,16 @@ interface ApiResponse<T> {
   year?: number;
 }
 
+interface GetTransactionsParams {
+  type?: TransactionType;
+  startDate?: string;
+  endDate?: string;
+  month?: number;
+  year?: number;
+  categoryId?: number;
+  limit?: number;
+}
+
 class FinanceService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
@@ -37,19 +47,23 @@ class FinanceService {
   }
 
   async getTransactions(
-    type?: TransactionType,
-    startDate?: string,
-    endDate?: string,
-    limit?: number
+    params?: GetTransactionsParams
   ): Promise<Transaction[]> {
-    const params = new URLSearchParams();
-    if (type) params.append('type', type);
-    if (startDate) params.append('start_date', startDate);
-    if (endDate) params.append('end_date', endDate);
-    if (limit) params.append('limit', limit.toString());
+    const searchParams = new URLSearchParams();
+
+    if (params?.type) searchParams.append('type', params.type);
+    if (params?.startDate) searchParams.append('start_date', params.startDate);
+    if (params?.endDate) searchParams.append('end_date', params.endDate);
+    if (params?.month !== undefined)
+      searchParams.append('month', params.month.toString());
+    if (params?.year !== undefined)
+      searchParams.append('year', params.year.toString());
+    if (params?.categoryId !== undefined)
+      searchParams.append('category_id', params.categoryId.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
 
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/finances/transactions?${params.toString()}`
+      `${this.baseUrl}/finances/transactions?${searchParams.toString()}`
     );
 
     if (!response.ok) {
