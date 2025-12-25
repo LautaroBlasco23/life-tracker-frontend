@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
-import { CreateActivityModal } from '@/components/activity/create-activity-modal';
-import { EditActivityModal } from '@/components/activity/edit-activity-modal';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activityService } from '@/services/activity-service';
 import type { Activity, DayTime, DayOfWeek } from '@/types/activity';
@@ -17,6 +15,8 @@ import { ActivityFilter } from '@/types';
 import { ActivityFilterModal } from './modal/filterModal';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
+import { CreateActivityModal } from './modal/create-activity-modal';
+import { EditActivityModal } from './modal/edit-activity-modal';
 
 const CATEGORY_CONFIG = {
   morning: {

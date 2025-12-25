@@ -17,14 +17,14 @@ import {
   X,
 } from 'lucide-react';
 import { financeService } from '@/services/finance-service';
-import { CreateTransactionModal } from '@/components/finance/createTransactionModal';
-import { EditTransactionModal } from '@/components/finance/editTransactionModal';
 import { showToast } from '@/lib/toast';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { formatCurrency } from '@/utils/formatNumbers';
 import { Badge } from '@/components/ui/badge';
 import { TransactionFilter, TransactionFilterModal } from './modal/filterModal';
+import { CreateTransactionModal } from './modal/createTransactionModal';
+import { EditTransactionModal } from './modal/editTransactionModal';
 
 const TYPE_CONFIG = {
   income: {
