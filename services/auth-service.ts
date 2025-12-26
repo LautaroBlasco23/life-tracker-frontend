@@ -28,6 +28,14 @@ interface BackendErrorResponse {
 
 type AuthChangeCallback = (isAuthenticated: boolean) => void;
 
+function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'UTC';
+  }
+}
+
 class AuthService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
@@ -95,6 +103,7 @@ class AuthService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Timezone': getBrowserTimezone(),
       },
       body: JSON.stringify(credentials),
     });
@@ -125,12 +134,18 @@ class AuthService {
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
+    const timezone = getBrowserTimezone();
+
     const response = await fetch(`${this.baseUrl}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Timezone': timezone,
       },
-      body: JSON.stringify(userData),
+      body: JSON.stringify({
+        ...userData,
+        timezone,
+      }),
     });
 
     if (!response.ok) {
@@ -243,6 +258,7 @@ class AuthService {
     }
 
     headers['Authorization'] = `Bearer ${this.accessToken}`;
+    headers['X-Timezone'] = getBrowserTimezone();
 
     let response = await fetch(url, {
       ...options,
