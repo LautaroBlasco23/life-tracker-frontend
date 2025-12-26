@@ -22,7 +22,8 @@ export interface ActivityStats {
   recentRecords: ActivityRecord[];
 }
 
-export interface ActivityFilter {
+export interface ActivityFilter
+  extends Record<string, string | number | undefined> {
   frequency?: string;
   dayTime?: string;
   scheduledFor?: string;

@@ -7,16 +7,16 @@ import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activityService } from '@/services/activity-service';
-import type { Activity, DayTime, DayOfWeek } from '@/types/activity';
+import type { Activity, DayTime } from '@/types/activity';
 import { Plus, Sun, CloudSun, Moon, Filter, X, Undo2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { ActivityFilter } from '@/types';
-import { ActivityFilterModal } from './modal/filterModal';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { CreateActivityModal } from './modal/create-activity-modal';
 import { EditActivityModal } from './modal/edit-activity-modal';
+import { GenericFilterModal } from '@/components/ui/filterModal/filterModal';
 
 const CATEGORY_CONFIG = {
   morning: {
@@ -41,6 +41,19 @@ const CATEGORY_CONFIG = {
     iconColor: 'text-indigo-500',
   },
 } as const;
+
+const FREQUENCY_OPTIONS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'oneTime', label: 'One-time' },
+];
+
+const DAY_TIME_OPTIONS = [
+  { value: 'morning', label: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+];
 
 type ViewMode = 'today' | 'filtered';
 
@@ -76,7 +89,7 @@ function toCompletionDateISO(dateString?: string): string | undefined {
 function formatDayFrequency(dayFrequency?: string): string | null {
   if (!dayFrequency) return null;
   try {
-    const days: DayOfWeek[] = JSON.parse(dayFrequency);
+    const days: string[] = JSON.parse(dayFrequency);
     return days
       .map((day) => day.charAt(0).toUpperCase() + day.slice(1))
       .join(', ');
@@ -341,7 +354,6 @@ export default function ActivitiesPage() {
       <div className="min-h-screen bg-background pb-20">
         <Navigation />
         <div className="max-w-4xl mx-auto p-4 md:p-6">
-          {/* Mobile: Stacked layout */}
           <div className="flex flex-col gap-4 mb-8 md:hidden">
             <div>
               <h1 className="text-2xl font-semibold text-foreground mb-1">
@@ -381,7 +393,6 @@ export default function ActivitiesPage() {
             </div>
           </div>
 
-          {/* Desktop: Original side-by-side layout */}
           <div className="hidden md:flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
@@ -573,11 +584,34 @@ export default function ActivitiesPage() {
             activity={editingActivity}
             onActivityUpdated={handleActivityUpdated}
           />
-          <ActivityFilterModal
+          <GenericFilterModal
             open={showFilterModal}
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
+            title="Filter Activities"
+            fields={[
+              {
+                id: 'frequency',
+                label: 'Frequency',
+                type: 'select',
+                options: FREQUENCY_OPTIONS,
+                placeholder: 'All frequencies',
+              },
+              {
+                id: 'dayTime',
+                label: 'Time of Day',
+                type: 'select',
+                options: DAY_TIME_OPTIONS,
+                placeholder: 'All times',
+              },
+              {
+                id: 'scheduledFor',
+                label: 'Scheduled For Date',
+                type: 'date',
+                helperText: 'Show activities scheduled for a specific date',
+              },
+            ]}
           />
         </div>
       </div>

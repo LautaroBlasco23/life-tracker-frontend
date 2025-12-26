@@ -22,9 +22,21 @@ import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { formatCurrency } from '@/utils/formatNumbers';
 import { Badge } from '@/components/ui/badge';
-import { TransactionFilter, TransactionFilterModal } from './modal/filterModal';
 import { CreateTransactionModal } from './modal/createTransactionModal';
 import { EditTransactionModal } from './modal/editTransactionModal';
+import {
+  createCategoryOptions,
+  GenericFilterModal,
+  MONTHS,
+  YEARS,
+} from '@/components/ui/filterModal/filterModal';
+
+export interface TransactionFilter
+  extends Record<string, string | number | undefined> {
+  month?: number;
+  year?: number;
+  categoryId?: number;
+}
 
 const TYPE_CONFIG = {
   income: {
@@ -550,12 +562,35 @@ export default function FinancePage() {
             categories={categories}
           />
 
-          <TransactionFilterModal
+          <GenericFilterModal
             open={showFilterModal}
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
-            categories={categories}
+            title="Filter Transactions"
+            fields={[
+              {
+                id: 'month',
+                label: 'Month',
+                type: 'select',
+                options: MONTHS,
+                placeholder: 'All months',
+              },
+              {
+                id: 'year',
+                label: 'Year',
+                type: 'select',
+                options: YEARS.map((y) => ({ value: y, label: String(y) })),
+                placeholder: 'All years',
+              },
+              {
+                id: 'categoryId',
+                label: 'Category',
+                type: 'select',
+                options: createCategoryOptions(categories),
+                placeholder: 'All categories',
+              },
+            ]}
           />
         </div>
       </div>

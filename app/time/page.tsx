@@ -15,7 +15,19 @@ import { EditTimeRecordModal } from './modal/edit-time-record-modal';
 import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { Badge } from '@/components/ui/badge';
-import { TimeFilterModal, TimeRecordFilter } from './modal/filterModal';
+import { TIME_CATEGORIES } from '@/types/time';
+import {
+  GenericFilterModal,
+  MONTHS,
+  YEARS,
+} from '@/components/ui/filterModal/filterModal';
+
+export interface TimeRecordFilter
+  extends Record<string, string | number | undefined> {
+  month?: number;
+  year?: number;
+  category?: string;
+}
 
 const CATEGORY_COLORS: Record<
   string,
@@ -511,11 +523,38 @@ export default function TimePage() {
             onRecordUpdated={handleRecordUpdated}
           />
 
-          <TimeFilterModal
+          <GenericFilterModal
             open={showFilterModal}
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
+            title="Filter Time Records"
+            fields={[
+              {
+                id: 'month',
+                label: 'Month',
+                type: 'select',
+                options: MONTHS,
+                placeholder: 'All months',
+              },
+              {
+                id: 'year',
+                label: 'Year',
+                type: 'select',
+                options: YEARS.map((y) => ({ value: y, label: String(y) })),
+                placeholder: 'All years',
+              },
+              {
+                id: 'category',
+                label: 'Category',
+                type: 'select',
+                options: TIME_CATEGORIES.map((cat) => ({
+                  value: cat,
+                  label: cat,
+                })),
+                placeholder: 'All categories',
+              },
+            ]}
           />
         </div>
       </div>
