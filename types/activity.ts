@@ -1,3 +1,5 @@
+import { ActivityRecord } from './activityRecords';
+
 export type Frequency = 'daily' | 'weekly' | 'monthly' | 'oneTime';
 export type DayOfWeek =
   | 'monday'
@@ -8,6 +10,11 @@ export type DayOfWeek =
   | 'saturday'
   | 'sunday';
 export type DayTime = 'morning' | 'afternoon' | 'evening';
+
+export interface StreakInfo {
+  current: number;
+  longest: number;
+}
 
 export interface Activity {
   id: number;
@@ -23,6 +30,7 @@ export interface Activity {
   updatedAt: string;
   todayCompletions: number;
   isCompletedToday: boolean;
+  streak?: StreakInfo;
 }
 
 export interface CreateActivityRequest {
