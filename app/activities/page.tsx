@@ -218,11 +218,23 @@ export default function ActivitiesPage() {
 
     setProcessingIds((prev) => new Set(prev).add(activity.id));
 
+    const newCompletions = activity.todayCompletions + 1;
+    const isNowCompleted = newCompletions >= activity.completionAmount;
+
     const optimisticActivity: Activity = {
       ...activity,
-      todayCompletions: activity.todayCompletions + 1,
-      isCompletedToday:
-        activity.todayCompletions + 1 >= activity.completionAmount,
+      todayCompletions: newCompletions,
+      isCompletedToday: isNowCompleted,
+      streak:
+        isNowCompleted && activity.streak
+          ? {
+              current: activity.streak.current + 1,
+              longest: Math.max(
+                activity.streak.longest,
+                activity.streak.current + 1
+              ),
+            }
+          : activity.streak,
     };
     updateActivity(optimisticActivity);
 
@@ -230,12 +242,11 @@ export default function ActivitiesPage() {
       const completionDate = toCompletionDateISO(targetDate);
       await activityService.recordActivity(activity.id, { completionDate });
 
-      const isNowCompleted = optimisticActivity.isCompletedToday;
       showToast({
         title: isNowCompleted ? 'Activity Completed!' : 'Progress Updated',
         description: isNowCompleted
           ? `Great job! You've completed "${activity.title}" for ${dateLabel}.`
-          : `Progress: ${optimisticActivity.todayCompletions}/${optimisticActivity.completionAmount}`,
+          : `Progress: ${newCompletions}/${activity.completionAmount}`,
         variant: 'default',
       });
     } catch (error) {
@@ -261,10 +272,20 @@ export default function ActivitiesPage() {
     setProcessingIds((prev) => new Set(prev).add(activity.id));
 
     const newCompletions = Math.max(0, activity.todayCompletions - 1);
+    const wasCompleted = activity.isCompletedToday;
+    const isStillCompleted = newCompletions >= activity.completionAmount;
+
     const optimisticActivity: Activity = {
       ...activity,
       todayCompletions: newCompletions,
-      isCompletedToday: newCompletions >= activity.completionAmount,
+      isCompletedToday: isStillCompleted,
+      streak:
+        wasCompleted && !isStillCompleted && activity.streak
+          ? {
+              current: Math.max(0, activity.streak.current - 1),
+              longest: activity.streak.longest,
+            }
+          : activity.streak,
     };
     updateActivity(optimisticActivity);
 
@@ -523,6 +544,7 @@ export default function ActivitiesPage() {
                             completedLabel: 'Complete',
                             incompleteHint: 'Tap to complete',
                           }}
+                          streak={activity.streak}
                           isCompleted={activity.isCompletedToday}
                           onClick={() => handleRecordCompletion(activity)}
                           onEdit={() => handleEditActivity(activity)}

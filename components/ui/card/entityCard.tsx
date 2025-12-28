@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Edit, Trash2 } from 'lucide-react';
 import { DropdownMenuItem, EntityDropdown } from './entityDropdown';
 import { DeleteModal } from './delete-modal';
+import { StreakBadge } from '../streak-badge';
 
 interface BadgeConfig {
   label: string;
@@ -24,6 +25,11 @@ interface ProgressConfig {
   total: number;
   completedLabel?: string;
   incompleteHint?: string;
+}
+
+interface StreakConfig {
+  current: number;
+  longest?: number;
 }
 
 interface ExtraMenuItem {
@@ -46,6 +52,7 @@ interface EntityCardProps {
   badges?: BadgeConfig[];
   metadata?: React.ReactNode;
   progress?: ProgressConfig;
+  streak?: StreakConfig;
   isCompleted?: boolean;
   onClick?: () => void;
   onEdit: () => void;
@@ -61,6 +68,7 @@ export function EntityCard({
   badges = [],
   metadata,
   progress,
+  streak,
   isCompleted = false,
   onClick,
   onEdit,
@@ -124,6 +132,9 @@ export function EntityCard({
                   >
                     {progress.completedLabel ?? 'Complete'}
                   </Badge>
+                )}
+                {streak && streak.current > 0 && (
+                  <StreakBadge current={streak.current} size="sm" />
                 )}
               </div>
               {subtitle && (
