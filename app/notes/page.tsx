@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,34 @@ import { showToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { DeleteModal } from '@/components/ui/card/delete-modal';
 
+const DRAFT_STORAGE_KEY = 'notes_draft';
+
+interface NoteDraft {
+  noteId: number;
+  title: string;
+  content: string;
+}
+
+function saveDraft(draft: NoteDraft | null): void {
+  if (draft) {
+    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } else {
+    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+  }
+}
+
+function loadDraft(): NoteDraft | null {
+  const stored = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored) as NoteDraft;
+  } catch {
+    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    return null;
+  }
+}
+
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,14 +53,16 @@ export default function NotesPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const initializedRef = useRef(false);
 
-  const loadNotes = useCallback(async () => {
+  const loadNotes = useCallback(async (query?: string) => {
     try {
       setIsLoading(true);
-      const userNotes = searchQuery
-        ? await noteService.searchNotes(searchQuery)
+      const userNotes = query
+        ? await noteService.searchNotes(query)
         : await noteService.getNotes();
       setNotes(userNotes);
+      return userNotes;
     } catch (error) {
       console.error('Failed to load notes:', error);
       showToast({
@@ -41,20 +71,64 @@ export default function NotesPage() {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+      return [];
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, []);
 
   useEffect(() => {
-    loadNotes();
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const initialize = async () => {
+      const userNotes = await loadNotes();
+
+      const draft = loadDraft();
+      if (draft) {
+        const note = userNotes.find((n) => n.id === draft.noteId);
+        if (note) {
+          setSelectedNote(note);
+          setEditTitle(draft.title);
+          setEditContent(draft.content);
+          setHasUnsavedChanges(
+            draft.title !== note.title || draft.content !== note.content
+          );
+          showToast({
+            title: 'Draft restored',
+            description: 'Your unsaved changes have been restored.',
+          });
+        } else {
+          saveDraft(null);
+        }
+      }
+    };
+
+    initialize();
   }, [loadNotes]);
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
+
+    loadNotes(searchQuery);
+  }, [searchQuery, loadNotes]);
 
   useEffect(() => {
     if (selectedNote) {
       const titleChanged = editTitle !== selectedNote.title;
       const contentChanged = editContent !== selectedNote.content;
-      setHasUnsavedChanges(titleChanged || contentChanged);
+      const unsaved = titleChanged || contentChanged;
+      setHasUnsavedChanges(unsaved);
+
+      if (unsaved) {
+        saveDraft({
+          noteId: selectedNote.id,
+          title: editTitle,
+          content: editContent,
+        });
+      } else {
+        saveDraft(null);
+      }
     }
   }, [editTitle, editContent, selectedNote]);
 
@@ -69,6 +143,7 @@ export default function NotesPage() {
     setEditTitle(note.title);
     setEditContent(note.content);
     setHasUnsavedChanges(false);
+    saveDraft(null);
   };
 
   const handleBackToList = () => {
@@ -82,9 +157,17 @@ export default function NotesPage() {
     setEditTitle('');
     setEditContent('');
     setHasUnsavedChanges(false);
+    saveDraft(null);
   };
 
   const handleCreateNote = async () => {
+    if (hasUnsavedChanges) {
+      const confirmCreate = window.confirm(
+        'You have unsaved changes. Are you sure you want to create a new note?'
+      );
+      if (!confirmCreate) return;
+    }
+
     try {
       const newNote = await noteService.createNote({
         title: 'Untitled Note',
@@ -95,6 +178,7 @@ export default function NotesPage() {
       setEditTitle(newNote.title);
       setEditContent(newNote.content);
       setHasUnsavedChanges(false);
+      saveDraft(null);
       showToast({
         title: 'Note created',
         description: 'Start writing your new note.',
@@ -123,6 +207,7 @@ export default function NotesPage() {
         prev.map((note) => (note.id === updatedNote.id ? updatedNote : note))
       );
       setHasUnsavedChanges(false);
+      saveDraft(null);
       showToast({
         title: 'Note saved',
         description: 'Your changes have been saved.',
@@ -154,6 +239,7 @@ export default function NotesPage() {
       setEditTitle('');
       setEditContent('');
       setHasUnsavedChanges(false);
+      saveDraft(null);
     }
     showToast({
       title: 'Note deleted',
@@ -162,154 +248,14 @@ export default function NotesPage() {
     setNoteToDelete(null);
   };
 
-  const formatDate = (date: Date): string => {
+  const formatDate = (dateString: string): string => {
     return new Intl.DateTimeFormat(undefined, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
+    }).format(new Date(dateString));
   };
-
-  const NoteSidebar = () => (
-    <aside
-      className={cn(
-        'flex flex-col bg-muted/30',
-        'w-full md:w-80 md:border-r md:border-border',
-        selectedNote ? 'hidden md:flex' : 'flex'
-      )}
-    >
-      <div className="p-3 space-y-3 border-b border-border md:border-b-0">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Button onClick={handleCreateNote} className="w-full" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Note
-        </Button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="p-4 text-center text-muted-foreground">
-            Loading notes...
-          </div>
-        ) : notes.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            {searchQuery ? 'No notes found' : 'No notes yet'}
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <button
-                  onClick={() => handleSelectNote(note)}
-                  className={cn(
-                    'w-full text-left p-3 hover:bg-muted/50 transition-colors',
-                    selectedNote?.id === note.id && 'bg-primary/10'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">
-                        {note.title || 'Untitled'}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {note.content.slice(0, 50) || 'No content'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDate(note.editedAt)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(note);
-                      }}
-                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </aside>
-  );
-
-  const NoteEditor = () => (
-    <main
-      className={cn(
-        'flex-1 flex flex-col',
-        selectedNote ? 'flex' : 'hidden md:flex'
-      )}
-    >
-      {selectedNote ? (
-        <>
-          <div className="p-4 border-b border-border flex items-center justify-between gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToList}
-              className="md:hidden"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
-            </Button>
-            <Input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="Note title"
-              className="flex-1 text-xl font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto"
-            />
-            <Button
-              onClick={handleSaveNote}
-              disabled={!hasUnsavedChanges || isSaving}
-              size="sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-          <div className="flex-1 p-4">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              placeholder="Start writing..."
-              className="w-full h-full resize-none border-none shadow-none focus-visible:ring-0 text-base leading-relaxed"
-            />
-          </div>
-          <div className="px-4 py-2 border-t border-border text-xs text-muted-foreground">
-            Last edited: {formatDate(selectedNote.editedAt)}
-            {hasUnsavedChanges && (
-              <span className="ml-2 text-amber-500">• Unsaved changes</span>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Select a note</p>
-            <p className="text-sm mt-1">
-              Choose a note from the list or create a new one
-            </p>
-          </div>
-        </div>
-      )}
-    </main>
-  );
 
   return (
     <AuthGuard>
@@ -322,8 +268,143 @@ export default function NotesPage() {
           </div>
 
           <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-            <NoteSidebar />
-            <NoteEditor />
+            <aside
+              className={cn(
+                'flex flex-col bg-muted/30',
+                'w-full md:w-80 md:border-r md:border-border',
+                selectedNote ? 'hidden md:flex' : 'flex'
+              )}
+            >
+              <div className="p-3 space-y-3 border-b border-border md:border-b-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search notes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Button onClick={handleCreateNote} className="w-full" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Note
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {isLoading ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Loading notes...
+                  </div>
+                ) : notes.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    {searchQuery ? 'No notes found' : 'No notes yet'}
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {notes.map((note) => (
+                      <li key={note.id}>
+                        <button
+                          onClick={() => handleSelectNote(note)}
+                          className={cn(
+                            'w-full text-left p-3 hover:bg-muted/50 transition-colors',
+                            selectedNote?.id === note.id && 'bg-primary/10'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">
+                                {note.title || 'Untitled'}
+                              </p>
+                              <p className="text-sm text-muted-foreground truncate mt-0.5">
+                                {note.content.slice(0, 50) || 'No content'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDate(note.editedAt)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteModal(note);
+                              }}
+                              className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </aside>
+
+            <main
+              className={cn(
+                'flex-1 flex flex-col',
+                selectedNote ? 'flex' : 'hidden md:flex'
+              )}
+            >
+              {selectedNote ? (
+                <>
+                  <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBackToList}
+                      className="md:hidden"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      Back
+                    </Button>
+                    <Input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="Note title"
+                      className="flex-1 text-xl font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto"
+                    />
+                    <Button
+                      onClick={handleSaveNote}
+                      disabled={!hasUnsavedChanges || isSaving}
+                      size="sm"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                  <div className="flex-1 p-4">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      placeholder="Start writing..."
+                      className="w-full h-full resize-none border-none shadow-none focus-visible:ring-0 text-base leading-relaxed"
+                    />
+                  </div>
+                  <div className="px-4 py-2 border-t border-border text-xs text-muted-foreground">
+                    Last edited: {formatDate(selectedNote.editedAt)}
+                    {hasUnsavedChanges && (
+                      <span className="ml-2 text-amber-500">
+                        • Unsaved changes
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">Select a note</p>
+                    <p className="text-sm mt-1">
+                      Choose a note from the list or create a new one
+                    </p>
+                  </div>
+                </div>
+              )}
+            </main>
           </div>
         </div>
       </div>

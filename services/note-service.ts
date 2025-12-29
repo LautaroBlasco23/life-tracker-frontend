@@ -1,100 +1,116 @@
-import type { Note, CreateNoteInput, UpdateNoteInput } from '@/types/note';
+import type {
+  Note,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+  NoteFilter,
+} from '@/types/note';
+import { authService } from './auth-service';
+import { getConfig } from '@/lib/config';
 
-const MOCK_NOTES: Note[] = [
-  {
-    id: 1,
-    title: 'Meeting Notes',
-    content:
-      'Discussed project timeline and milestones. Key decisions:\n\n- Launch date set for Q2\n- Weekly sync meetings on Tuesdays\n- Need to finalize design specs by next week',
-    editedAt: new Date('2024-01-15T10:30:00'),
-  },
-  {
-    id: 2,
-    title: 'Ideas for App',
-    content:
-      'Feature ideas to explore:\n\n1. Dark mode support\n2. Export to PDF\n3. Collaborative editing\n4. Tags and categories',
-    editedAt: new Date('2024-01-14T15:45:00'),
-  },
-  {
-    id: 3,
-    title: 'Book Recommendations',
-    content:
-      '- "Atomic Habits" by James Clear\n- "Deep Work" by Cal Newport\n- "The Pragmatic Programmer"',
-    editedAt: new Date('2024-01-13T09:00:00'),
-  },
-  {
-    id: 4,
-    title: 'Weekly Goals',
-    content:
-      'This week I want to:\n\n- Complete the notes feature\n- Review pull requests\n- Prepare presentation for Friday',
-    editedAt: new Date('2024-01-12T08:00:00'),
-  },
-];
-
-let notes = [...MOCK_NOTES];
-let nextId = 5;
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+interface BackendListResponse<T> {
+  count: number;
+  data: T[] | null;
+  message: string;
 }
 
-export const noteService = {
-  async getNotes(): Promise<Note[]> {
-    await delay(300);
-    return [...notes].sort(
-      (a, b) => b.editedAt.getTime() - a.editedAt.getTime()
+interface BackendSingleResponse<T> {
+  data: T;
+  message: string;
+}
+
+class NoteService {
+  private get baseUrl(): string {
+    return getConfig().apiUrl;
+  }
+
+  private buildQueryString(filter?: NoteFilter): string {
+    if (!filter) return '';
+
+    const params = new URLSearchParams();
+
+    if (filter.q) params.set('q', filter.q);
+
+    const queryString = params.toString();
+    return queryString ? `?${queryString}` : '';
+  }
+
+  async getNotes(filter?: NoteFilter): Promise<Note[]> {
+    const queryString = this.buildQueryString(filter);
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/notes${queryString}`
     );
-  },
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch notes');
+    }
+
+    const result: BackendListResponse<Note> = await response.json();
+    return result.data ?? [];
+  }
 
   async searchNotes(query: string): Promise<Note[]> {
-    await delay(200);
-    const lowerQuery = query.toLowerCase();
-    return notes
-      .filter(
-        (note) =>
-          note.title.toLowerCase().includes(lowerQuery) ||
-          note.content.toLowerCase().includes(lowerQuery)
-      )
-      .sort((a, b) => b.editedAt.getTime() - a.editedAt.getTime());
-  },
+    return this.getNotes({ q: query });
+  }
 
-  async getNote(id: number): Promise<Note | null> {
-    await delay(100);
-    return notes.find((note) => note.id === id) ?? null;
-  },
+  async getNote(id: number): Promise<Note> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/notes/${id}`
+    );
 
-  async createNote(input: CreateNoteInput): Promise<Note> {
-    await delay(300);
-    const newNote: Note = {
-      id: nextId++,
-      title: input.title,
-      content: input.content,
-      editedAt: new Date(),
-    };
-    notes.push(newNote);
-    return newNote;
-  },
-
-  async updateNote(id: number, input: UpdateNoteInput): Promise<Note> {
-    await delay(300);
-    const index = notes.findIndex((note) => note.id === id);
-    if (index === -1) {
+    if (!response.ok) {
       throw new Error('Note not found');
     }
-    notes[index] = {
-      ...notes[index],
-      ...input,
-      editedAt: new Date(),
-    };
-    return notes[index];
-  },
+
+    const result: BackendSingleResponse<Note> = await response.json();
+    return result.data;
+  }
+
+  async createNote(data: CreateNoteRequest): Promise<Note> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/notes`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to create note');
+    }
+
+    const result: BackendSingleResponse<Note> = await response.json();
+    return result.data;
+  }
+
+  async updateNote(id: number, data: UpdateNoteRequest): Promise<Note> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/notes/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to update note');
+    }
+
+    const result: BackendSingleResponse<Note> = await response.json();
+    return result.data;
+  }
 
   async deleteNote(id: number): Promise<void> {
-    await delay(200);
-    const index = notes.findIndex((note) => note.id === id);
-    if (index === -1) {
-      throw new Error('Note not found');
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/notes/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete note');
     }
-    notes.splice(index, 1);
-  },
-};
+  }
+}
+
+export const noteService = new NoteService();

@@ -1,16 +1,22 @@
 export interface Note {
   id: number;
+  userId: number;
   title: string;
   content: string;
-  editedAt: Date;
+  createdAt: string;
+  editedAt: string;
 }
 
-export interface CreateNoteInput {
+export interface CreateNoteRequest {
   title: string;
   content: string;
 }
 
-export interface UpdateNoteInput {
+export interface UpdateNoteRequest {
   title?: string;
   content?: string;
+}
+
+export interface NoteFilter extends Record<string, string | undefined> {
+  q?: string;
 }
