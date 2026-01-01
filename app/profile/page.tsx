@@ -1,7 +1,6 @@
 'use client';
 
 import type React from 'react';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,28 +20,41 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { authService } from '@/services/auth-service';
 import { userService } from '@/services/user-service';
 import type { User } from '@/types/user';
-import { LogOut } from 'lucide-react';
+import { LogOut, KeyRound, Mail } from 'lucide-react';
 import { showToast } from '@/lib/toast';
+import { UpdatePasswordModal } from './modals/update-password-modal';
+import { UpdateEmailModal } from './modals/update-email-modal';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setFirstName(currentUser.firstName);
-      setLastName(currentUser.lastName);
-      setEmail(currentUser.email);
-    }
-    setIsLoading(false);
+    const loadProfile = async () => {
+      try {
+        const profile = await userService.getMyProfile();
+        setUser(profile);
+        setFirstName(profile.firstName);
+        setLastName(profile.lastName);
+      } catch {
+        const cachedUser = authService.getCurrentUser();
+        if (cachedUser) {
+          setUser(cachedUser);
+          setFirstName(cachedUser.firstName);
+          setLastName(cachedUser.lastName);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProfile();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -54,7 +66,6 @@ export default function ProfilePage() {
       const updatedUser = await userService.updateUser({
         firstName,
         lastName,
-        email,
       });
       setUser(updatedUser);
       showToast({
@@ -85,7 +96,6 @@ export default function ProfilePage() {
         title: 'Profile picture updated',
         description: 'Your profile picture has been successfully updated.',
       });
-
       e.target.value = '';
     } catch (error) {
       showToast({
@@ -106,6 +116,10 @@ export default function ProfilePage() {
       description: 'You have been successfully signed out.',
     });
     router.push('/login');
+  };
+
+  const handleEmailUpdated = (updatedUser: User) => {
+    setUser(updatedUser);
   };
 
   if (isLoading) {
@@ -134,7 +148,6 @@ export default function ProfilePage() {
             </div>
             <ThemeToggle />
           </div>
-
           <div className="space-y-6">
             <Card className="bg-muted/30">
               <CardHeader>
@@ -172,12 +185,11 @@ export default function ProfilePage() {
                     className="hidden"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    JPG, PNG or GIF. Max size 5MB.
+                    JPG, PNG or WebP. Max size 10MB.
                   </p>
                 </div>
               </CardContent>
             </Card>
-
             <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
@@ -212,10 +224,13 @@ export default function ProfilePage() {
                     <Input
                       id="email"
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      value={user?.email ?? ''}
+                      disabled
+                      className="bg-muted"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      You can change your email in Account Information below.
+                    </p>
                   </div>
                   <Button type="submit" disabled={isSaving}>
                     {isSaving ? 'Saving...' : 'Save changes'}
@@ -223,11 +238,12 @@ export default function ProfilePage() {
                 </form>
               </CardContent>
             </Card>
-
             <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
-                <CardDescription>View your account details</CardDescription>
+                <CardDescription>
+                  View your account details and manage security
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -252,8 +268,25 @@ export default function ProfilePage() {
                     </p>
                   </div>
                 </div>
-
-                <div className="pt-4 border-t border-border">
+                <div className="pt-4 border-t border-border space-y-3">
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsPasswordModalOpen(true)}
+                      className="flex-1 flex items-center justify-center gap-2"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Change Password
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEmailModalOpen(true)}
+                      className="flex-1 flex items-center justify-center gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Change Email
+                    </Button>
+                  </div>
                   <Button
                     variant="outline"
                     onClick={handleSignOut}
@@ -268,6 +301,18 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <UpdatePasswordModal
+        open={isPasswordModalOpen}
+        onOpenChange={setIsPasswordModalOpen}
+      />
+
+      <UpdateEmailModal
+        open={isEmailModalOpen}
+        onOpenChange={setIsEmailModalOpen}
+        currentEmail={user?.email ?? ''}
+        onEmailUpdated={handleEmailUpdated}
+      />
     </AuthGuard>
   );
 }
