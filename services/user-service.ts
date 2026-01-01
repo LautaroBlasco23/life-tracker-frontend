@@ -5,8 +5,7 @@ import { getConfig } from '@/lib/config';
 interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
-  profilePicUrl?: string;
-  email?: string;
+  timezone?: string;
 }
 
 interface ApiResponse<T> {
@@ -17,6 +16,18 @@ interface ApiResponse<T> {
 class UserService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
+  }
+
+  async getMyProfile(): Promise<User> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/users/me`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+    const result: ApiResponse<User> = await response.json();
+    authService.setCurrentUser(result.data);
+    return result.data;
   }
 
   async getUserById(id: number): Promise<User | null> {
@@ -33,85 +44,47 @@ class UserService {
 
   async updateUser(updates: UpdateUserRequest): Promise<User> {
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/users/profile`,
+      `${this.baseUrl}/users/me`,
       {
         method: 'PUT',
         body: JSON.stringify(updates),
       }
     );
-
     if (!response.ok) {
       throw new Error('Failed to update user');
     }
-
     const result: ApiResponse<User> = await response.json();
-    const updatedUser = result.data;
-
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      const newUser = { ...currentUser, ...updatedUser };
-      (authService as any).currentUser = newUser;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
-      }
-    }
-
-    return updatedUser;
+    authService.setCurrentUser(result.data);
+    return result.data;
   }
 
   async uploadProfilePicture(file: File): Promise<User> {
     const formData = new FormData();
     formData.append('image', file);
-
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/users/profile/image`,
+      `${this.baseUrl}/users/me/image`,
       {
         method: 'POST',
         body: formData,
       }
     );
-
     if (!response.ok) {
       throw new Error('Failed to upload profile picture');
     }
-
     const result: ApiResponse<User> = await response.json();
-    const updatedUser = result.data;
-
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      const newUser = { ...currentUser, ...updatedUser };
-      (authService as any).currentUser = newUser;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
-      }
-    }
-
-    return updatedUser;
+    authService.setCurrentUser(result.data);
+    return result.data;
   }
 
-  async deleteProfilePicture(): Promise<void> {
+  async deleteProfilePicture(): Promise<User> {
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/users/profile/image`,
+      `${this.baseUrl}/users/me/image`,
       { method: 'DELETE' }
     );
-
     if (!response.ok) {
       throw new Error('Failed to delete profile picture');
     }
-
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      const newUser = {
-        ...currentUser,
-        profilePicUrl: null,
-        thumbnailUrl: null,
-      };
-      (authService as any).currentUser = newUser;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
-      }
-    }
+    return this.getMyProfile();
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -121,17 +94,14 @@ class UserService {
     if (!response.ok) {
       throw new Error('Failed to fetch users');
     }
-    const result: ApiResponse<User[]> & { count: number } =
-      await response.json();
+    const result: ApiResponse<User[]> = await response.json();
     return result.data;
   }
 
   async deleteUser(id: number): Promise<void> {
     const response = await authService.makeAuthenticatedRequest(
       `${this.baseUrl}/users/${id}`,
-      {
-        method: 'DELETE',
-      }
+      { method: 'DELETE' }
     );
     if (!response.ok) {
       throw new Error('Failed to delete user');

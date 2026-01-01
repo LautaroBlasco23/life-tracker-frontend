@@ -4,7 +4,14 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  UpdatePasswordRequest,
+  UpdateEmailRequest,
 } from '@/types';
+
+interface BackendRefreshResponse {
+  data: TokenResponse;
+  message: string;
+}
 
 interface TokenResponse {
   accessToken: string;
@@ -24,6 +31,11 @@ interface BackendAuthResponse {
 interface BackendErrorResponse {
   error: string;
   details?: string;
+}
+
+interface BackendUpdateEmailResponse {
+  data: TokenResponse;
+  message: string;
 }
 
 type AuthChangeCallback = (isAuthenticated: boolean) => void;
@@ -191,8 +203,8 @@ class AuthService {
       throw new Error('Session expired');
     }
 
-    const backendResponse: BackendAuthResponse = await response.json();
-    const { tokens } = backendResponse.data;
+    const backendResponse: BackendRefreshResponse = await response.json();
+    const tokens = backendResponse.data;
 
     this.accessToken = tokens.accessToken;
     this.refreshToken = tokens.refreshToken;
@@ -283,6 +295,59 @@ class AuthService {
     }
 
     return response;
+  }
+
+  setCurrentUser(user: User): void {
+    this.currentUser = user;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+    }
+  }
+
+  async updatePassword(request: UpdatePasswordRequest): Promise<void> {
+    const response = await this.makeAuthenticatedRequest(
+      `${this.baseUrl}/auth/password`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+  }
+
+  async updateEmail(request: UpdateEmailRequest): Promise<void> {
+    const response = await this.makeAuthenticatedRequest(
+      `${this.baseUrl}/auth/email`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    const backendResponse: BackendUpdateEmailResponse = await response.json();
+    const tokens = backendResponse.data;
+
+    this.accessToken = tokens.accessToken;
+    this.refreshToken = tokens.refreshToken;
+
+    if (this.currentUser) {
+      this.currentUser = { ...this.currentUser, email: request.newEmail };
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', tokens.accessToken);
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+      if (this.currentUser) {
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+      }
+    }
   }
 }
 
