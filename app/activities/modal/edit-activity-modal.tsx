@@ -44,6 +44,7 @@ const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
 ];
 
 const CATEGORIES: { value: DayTime; label: string }[] = [
+  { value: 'notSpecified', label: 'Any Moment' },
   { value: 'morning', label: 'Morning' },
   { value: 'afternoon', label: 'Afternoon' },
   { value: 'evening', label: 'Evening' },
@@ -90,7 +91,7 @@ export function EditActivityModal({
     setDescription('');
     setCompletionAmount(1);
     setFrequency('daily');
-    setDayTime('morning');
+    setDayTime('notSpecified');
     setSelectedDays([]);
   };
 

@@ -43,6 +43,7 @@ const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
 ];
 
 const DAY_TIMES: { value: DayTime; label: string }[] = [
+  { value: 'notSpecified', label: 'Any Moment' },
   { value: 'morning', label: 'Morning' },
   { value: 'afternoon', label: 'Afternoon' },
   { value: 'evening', label: 'Evening' },
@@ -57,7 +58,7 @@ export function CreateActivityModal({
   const [description, setDescription] = useState('');
   const [completionAmount, setCompletionAmount] = useState(1);
   const [frequency, setFrequency] = useState<Frequency>('daily');
-  const [dayTime, setDayTime] = useState<DayTime>('morning'); // Changed from category to dayTime
+  const [dayTime, setDayTime] = useState<DayTime>('notSpecified');
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,7 +67,7 @@ export function CreateActivityModal({
     setDescription('');
     setCompletionAmount(1);
     setFrequency('daily');
-    setDayTime('morning'); // Changed from category to dayTime
+    setDayTime('morning');
     setSelectedDays([]);
   };
 

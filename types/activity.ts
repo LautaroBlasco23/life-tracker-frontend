@@ -9,7 +9,7 @@ export type DayOfWeek =
   | 'friday'
   | 'saturday'
   | 'sunday';
-export type DayTime = 'morning' | 'afternoon' | 'evening';
+export type DayTime = 'notSpecified' | 'morning' | 'afternoon' | 'evening';
 
 export interface StreakInfo {
   current: number;

@@ -8,7 +8,16 @@ import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activityService } from '@/services/activity-service';
 import type { Activity, DayTime } from '@/types/activity';
-import { Plus, Sun, CloudSun, Moon, Filter, X, Undo2 } from 'lucide-react';
+import {
+  Plus,
+  Sun,
+  CloudSun,
+  Moon,
+  Filter,
+  X,
+  Undo2,
+  Clock,
+} from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { ActivityFilter } from '@/types';
@@ -19,6 +28,13 @@ import { EditActivityModal } from './modal/edit-activity-modal';
 import { GenericFilterModal } from '@/components/ui/filterModal/filterModal';
 
 const CATEGORY_CONFIG = {
+  notSpecified: {
+    label: 'Any Moment',
+    icon: Clock,
+    description: 'Flexible timing',
+    accentColor: 'border-slate-400',
+    iconColor: 'text-slate-500',
+  },
   morning: {
     label: 'Morning',
     icon: Sun,
@@ -50,6 +66,7 @@ const FREQUENCY_OPTIONS = [
 ];
 
 const DAY_TIME_OPTIONS = [
+  { value: 'notSpecified', label: 'Any Moment' },
   { value: 'morning', label: 'Morning' },
   { value: 'afternoon', label: 'Afternoon' },
   { value: 'evening', label: 'Evening' },
