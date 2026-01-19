@@ -11,6 +11,7 @@ import type {
   TransactionType,
   TransactionFrequency,
   Category,
+  FixedTransaction,
 } from '@/types';
 import {
   Plus,
@@ -29,6 +30,8 @@ import { formatCurrency } from '@/utils/formatNumbers';
 import { Badge } from '@/components/ui/badge';
 import { CreateTransactionModal } from './modal/createTransactionModal';
 import { EditTransactionModal } from './modal/editTransactionModal';
+import { PaymentModal } from './modal/paymentModal';
+import { FixedTransactionCard } from './components/fixedTransactionCard';
 import {
   createCategoryOptions,
   GenericFilterModal,
@@ -91,6 +94,9 @@ interface SummaryTotals {
 
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [fixedTransactions, setFixedTransactions] = useState<
+    FixedTransaction[]
+  >([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [summaryTotals, setSummaryTotals] = useState<SummaryTotals>({
     income: 0,
@@ -100,21 +106,31 @@ export default function FinancePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+  const [selectedFixedTransaction, setSelectedFixedTransaction] =
+    useState<FixedTransaction | null>(null);
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>({});
   const [activeFrequency, setActiveFrequency] =
     useState<TransactionFrequency>('variable');
 
   const loadSummaryTotals = useCallback(async () => {
     try {
-      const allTransactions = await financeService.getTransactions({
-        month: activeFilter.month,
-        year: activeFilter.year,
-        categoryId: activeFilter.categoryId,
-      });
+      const [variableTransactions, fixed] = await Promise.all([
+        financeService.getTransactions({
+          frequency: 'variable',
+          month: activeFilter.month,
+          year: activeFilter.year,
+          categoryId: activeFilter.categoryId,
+        }),
+        financeService.getFixedTransactions({
+          month: activeFilter.month,
+          year: activeFilter.year,
+        }),
+      ]);
 
-      const totals = allTransactions.reduce<SummaryTotals>(
+      const variableTotals = variableTransactions.reduce<SummaryTotals>(
         (acc, t) => {
           if (t.type === 'income') {
             acc.income += t.amount;
@@ -126,7 +142,24 @@ export default function FinancePage() {
         { income: 0, outcome: 0 }
       );
 
-      setSummaryTotals(totals);
+      const fixedTotals = fixed.reduce<SummaryTotals>(
+        (acc, t) => {
+          if (t.currentPeriodPayment) {
+            if (t.type === 'income') {
+              acc.income += t.currentPeriodPayment.amount;
+            } else {
+              acc.outcome += t.currentPeriodPayment.amount;
+            }
+          }
+          return acc;
+        },
+        { income: 0, outcome: 0 }
+      );
+
+      setSummaryTotals({
+        income: variableTotals.income + fixedTotals.income,
+        outcome: variableTotals.outcome + fixedTotals.outcome,
+      });
     } catch (error) {
       console.error('Failed to load summary totals:', error);
     }
@@ -135,17 +168,30 @@ export default function FinancePage() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [userTransactions, allCategories] = await Promise.all([
-        financeService.getTransactions({
-          frequency: activeFrequency,
+
+      const [allCategories] = await Promise.all([
+        financeService.getCategories(),
+      ]);
+
+      setCategories(allCategories);
+
+      if (activeFrequency === 'fixed') {
+        const fixed = await financeService.getFixedTransactions({
+          month: activeFilter.month,
+          year: activeFilter.year,
+        });
+        setFixedTransactions(fixed);
+        setTransactions([]);
+      } else {
+        const userTransactions = await financeService.getTransactions({
+          frequency: 'variable',
           month: activeFilter.month,
           year: activeFilter.year,
           categoryId: activeFilter.categoryId,
-        }),
-        financeService.getCategories(),
-      ]);
-      setTransactions(userTransactions);
-      setCategories(allCategories);
+        });
+        setTransactions(userTransactions);
+        setFixedTransactions([]);
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       showToast({
@@ -189,6 +235,11 @@ export default function FinancePage() {
       setTransactions(
         transactions.filter((transaction) => transaction.id !== transactionId)
       );
+      setFixedTransactions(
+        fixedTransactions.filter(
+          (transaction) => transaction.id !== transactionId
+        )
+      );
       loadSummaryTotals();
       showToast({
         title: 'Transaction deleted',
@@ -211,14 +262,8 @@ export default function FinancePage() {
     setShowCreateModal(false);
   };
 
-  const handleTransactionUpdated = (updatedTransaction: Transaction) => {
-    setTransactions(
-      transactions.map((transaction) =>
-        transaction.id === updatedTransaction.id
-          ? updatedTransaction
-          : transaction
-      )
-    );
+  const handleTransactionUpdated = (_updatedTransaction: Transaction) => {
+    loadData();
     loadSummaryTotals();
     setShowEditModal(false);
     setEditingTransaction(null);
@@ -227,6 +272,35 @@ export default function FinancePage() {
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setShowEditModal(true);
+  };
+
+  const handleEditFixedTransaction = (fixedTransaction: FixedTransaction) => {
+    const transactionForEdit: Transaction = {
+      id: fixedTransaction.id,
+      userId: 0,
+      type: fixedTransaction.type,
+      frequency: 'fixed',
+      paymentFrequency: fixedTransaction.paymentFrequency,
+      amount: 0,
+      categoryId: fixedTransaction.categoryId,
+      categoryName: fixedTransaction.categoryName,
+      description: fixedTransaction.description,
+      date: fixedTransaction.createdAt,
+      createdAt: fixedTransaction.createdAt,
+      updatedAt: fixedTransaction.updatedAt,
+    };
+    setEditingTransaction(transactionForEdit);
+    setShowEditModal(true);
+  };
+
+  const handleAddPayment = (transaction: FixedTransaction) => {
+    setSelectedFixedTransaction(transaction);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentCreated = () => {
+    loadData();
+    loadSummaryTotals();
   };
 
   const transactionsByType = transactions.reduce(
@@ -239,6 +313,18 @@ export default function FinancePage() {
       return acc;
     },
     {} as Record<TransactionType, Transaction[]>
+  );
+
+  const fixedTransactionsByType = fixedTransactions.reduce(
+    (acc, transaction) => {
+      const type = transaction.type;
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(transaction);
+      return acc;
+    },
+    {} as Record<TransactionType, FixedTransaction[]>
   );
 
   const balance = summaryTotals.income - summaryTotals.outcome;
@@ -256,6 +342,11 @@ export default function FinancePage() {
     }
     return null;
   };
+
+  const isFixedView = activeFrequency === 'fixed';
+  const hasData = isFixedView
+    ? fixedTransactions.length > 0
+    : transactions.length > 0;
 
   if (isLoading) {
     return (
@@ -306,7 +397,7 @@ export default function FinancePage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Transaction
+                New
               </Button>
             </div>
           </div>
@@ -445,7 +536,7 @@ export default function FinancePage() {
             </Card>
           </div>
 
-          {transactions.length === 0 ? (
+          {!hasData ? (
             <Card className="text-center py-12 bg-muted/30">
               <CardContent>
                 <div className="text-muted-foreground mb-4">
@@ -455,12 +546,12 @@ export default function FinancePage() {
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {filterCount > 0
                       ? 'No transactions match your filters'
-                      : 'No transactions yet'}
+                      : `No ${isFixedView ? 'fixed' : 'variable'} transactions yet`}
                   </h3>
                   <p>
                     {filterCount > 0
                       ? 'Try adjusting your filters or create new transactions.'
-                      : 'Get started by creating your first transaction.'}
+                      : `Get started by creating your first ${isFixedView ? 'fixed' : 'variable'} transaction.`}
                   </p>
                 </div>
                 {filterCount > 0 ? (
@@ -474,6 +565,52 @@ export default function FinancePage() {
                 )}
               </CardContent>
             </Card>
+          ) : isFixedView ? (
+            <div className="space-y-8">
+              {(Object.keys(TYPE_CONFIG) as TransactionType[]).map((type) => {
+                const typeTransactions = fixedTransactionsByType[type] || [];
+                const config = TYPE_CONFIG[type];
+
+                if (typeTransactions.length === 0) return null;
+
+                const paidCount = typeTransactions.filter(
+                  (t) => t.currentPeriodPayment
+                ).length;
+                const totalThisPeriod = typeTransactions.reduce(
+                  (sum, t) => sum + (t.currentPeriodPayment?.amount || 0),
+                  0
+                );
+
+                return (
+                  <div key={type} className="space-y-4">
+                    <CategoryHeader
+                      icon={config.icon}
+                      label={config.label}
+                      description={config.description}
+                      accentColor={config.accentColor}
+                      iconColor={config.iconColor}
+                      summaryValue={`$${formatCurrency(totalThisPeriod)}`}
+                      summaryLabel="This Period"
+                      itemCount={typeTransactions.length}
+                      itemName="transaction"
+                      extraInfo={`${paidCount}/${typeTransactions.length} paid`}
+                    />
+
+                    <div className="space-y-3">
+                      {typeTransactions.map((transaction) => (
+                        <FixedTransactionCard
+                          key={transaction.id}
+                          transaction={transaction}
+                          onAddPayment={handleAddPayment}
+                          onEdit={handleEditFixedTransaction}
+                          onDelete={handleDeleteTransaction}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div className="space-y-8">
               {(Object.keys(TYPE_CONFIG) as TransactionType[]).map((type) => {
@@ -513,10 +650,6 @@ export default function FinancePage() {
                               {
                                 label: transaction.type,
                                 variant: isIncome ? 'default' : 'destructive',
-                              },
-                              {
-                                label: transaction.frequency,
-                                variant: 'outline',
                               },
                             ]}
                             metadata={
@@ -559,8 +692,7 @@ export default function FinancePage() {
                                       </div>
                                     )}
                                     <div>
-                                      {transaction.type} •{' '}
-                                      {transaction.frequency} • $
+                                      {transaction.type} • $
                                       {formatCurrency(transaction.amount)}
                                     </div>
                                   </div>
@@ -593,6 +725,13 @@ export default function FinancePage() {
             categories={categories}
           />
 
+          <PaymentModal
+            open={showPaymentModal}
+            onOpenChange={setShowPaymentModal}
+            transaction={selectedFixedTransaction}
+            onPaymentCreated={handlePaymentCreated}
+          />
+
           <GenericFilterModal
             open={showFilterModal}
             onOpenChange={setShowFilterModal}
@@ -614,13 +753,17 @@ export default function FinancePage() {
                 options: YEARS.map((y) => ({ value: y, label: String(y) })),
                 placeholder: 'All years',
               },
-              {
-                id: 'categoryId',
-                label: 'Category',
-                type: 'select',
-                options: createCategoryOptions(categories),
-                placeholder: 'All categories',
-              },
+              ...(activeFrequency === 'variable'
+                ? [
+                    {
+                      id: 'categoryId',
+                      label: 'Category',
+                      type: 'select' as const,
+                      options: createCategoryOptions(categories),
+                      placeholder: 'All categories',
+                    },
+                  ]
+                : []),
             ]}
           />
         </div>

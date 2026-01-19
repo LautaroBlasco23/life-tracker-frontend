@@ -25,6 +25,7 @@ import type {
   Transaction,
   TransactionType,
   TransactionFrequency,
+  PaymentFrequency,
   Category,
 } from '@/types';
 import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
@@ -48,16 +49,25 @@ export function EditTransactionModal({
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('outcome');
   const [frequency, setFrequency] = useState<TransactionFrequency>('variable');
+  const [paymentFrequency, setPaymentFrequency] =
+    useState<PaymentFrequency>('monthly');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [date, setDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const isFixed = frequency === 'fixed';
+
   useEffect(() => {
     if (transaction && open) {
       setDescription(transaction.description || '');
-      setAmount(formatInputValue(Math.floor(transaction.amount).toString()));
+      setAmount(
+        transaction.amount > 0
+          ? formatInputValue(Math.floor(transaction.amount).toString())
+          : ''
+      );
       setType(transaction.type);
       setFrequency(transaction.frequency);
+      setPaymentFrequency(transaction.paymentFrequency || 'monthly');
       setCategoryId(transaction.categoryId);
       setDate(new Date(transaction.date).toISOString().split('T')[0]);
     }
@@ -68,6 +78,7 @@ export function EditTransactionModal({
     setAmount('');
     setType('outcome');
     setFrequency('variable');
+    setPaymentFrequency('monthly');
     setCategoryId(null);
     setDate('');
   };
@@ -101,18 +112,6 @@ export function EditTransactionModal({
     e.preventDefault();
     if (!transaction) return;
 
-    const numericAmount = parseInputValue(amount);
-    const amountValue = parseFloat(numericAmount);
-
-    if (isNaN(amountValue) || amountValue <= 0) {
-      showToast({
-        title: 'Validation error',
-        description: 'Please enter a valid amount greater than 0.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!categoryId) {
       showToast({
         title: 'Validation error',
@@ -120,6 +119,21 @@ export function EditTransactionModal({
         variant: 'destructive',
       });
       return;
+    }
+
+    let amountValue = 0;
+    if (!isFixed && amount) {
+      const numericAmount = parseInputValue(amount);
+      amountValue = parseFloat(numericAmount);
+
+      if (isNaN(amountValue) || amountValue <= 0) {
+        showToast({
+          title: 'Validation error',
+          description: 'Please enter a valid amount greater than 0.',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -130,7 +144,8 @@ export function EditTransactionModal({
         {
           type,
           frequency,
-          amount: amountValue,
+          paymentFrequency: isFixed ? paymentFrequency : undefined,
+          amount: isFixed ? undefined : amountValue,
           categoryId,
           description,
           date: new Date(date).toISOString(),
@@ -190,34 +205,6 @@ export function EditTransactionModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-amount">Amount</Label>
-              <Input
-                id="edit-amount"
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={amount}
-                onChange={handleAmountChange}
-                required
-                className="bg-input border-border"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-date">Date</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="bg-input border-border"
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="edit-type">Type</Label>
             <Select
@@ -248,11 +235,62 @@ export function EditTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed</SelectItem>
-                <SelectItem value="variable">Variable</SelectItem>
+                <SelectItem value="fixed">Fixed (Recurring)</SelectItem>
+                <SelectItem value="variable">Variable (One-time)</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {isFixed && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-paymentFrequency">Payment Frequency</Label>
+              <Select
+                value={paymentFrequency}
+                onValueChange={(value: PaymentFrequency) =>
+                  setPaymentFrequency(value)
+                }
+              >
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="bimonthly">Bimonthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {!isFixed && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-amount">Amount</Label>
+                <Input
+                  id="edit-amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  required
+                  className="bg-input border-border"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-date">Date</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="bg-input border-border"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="edit-category">Category</Label>

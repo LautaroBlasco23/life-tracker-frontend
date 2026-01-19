@@ -23,6 +23,7 @@ import type {
   Transaction,
   TransactionType,
   TransactionFrequency,
+  PaymentFrequency,
   Category,
 } from '@/types';
 import { financeService } from '@/services/finance-service';
@@ -49,15 +50,20 @@ export function CreateTransactionModal({
   const [type, setType] = useState<TransactionType>('outcome');
   const [frequency, setFrequency] =
     useState<TransactionFrequency>(defaultFrequency);
+  const [paymentFrequency, setPaymentFrequency] =
+    useState<PaymentFrequency>('monthly');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isFixed = frequency === 'fixed';
 
   const resetForm = () => {
     setDescription('');
     setAmount('');
     setType('outcome');
     setFrequency(defaultFrequency);
+    setPaymentFrequency('monthly');
     setCategoryId(null);
     setDate(new Date().toISOString().split('T')[0]);
   };
@@ -70,6 +76,9 @@ export function CreateTransactionModal({
   const handleFrequencyChange = (newFrequency: TransactionFrequency) => {
     setFrequency(newFrequency);
     setCategoryId(null);
+    if (newFrequency === 'fixed') {
+      setAmount('');
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,18 +89,6 @@ export function CreateTransactionModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const numericAmount = parseInputValue(amount);
-    const amountValue = parseFloat(numericAmount);
-
-    if (isNaN(amountValue) || amountValue <= 0) {
-      showToast({
-        title: 'Validation error',
-        description: 'Please enter a valid amount greater than 0.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!categoryId) {
       showToast({
         title: 'Validation error',
@@ -101,12 +98,28 @@ export function CreateTransactionModal({
       return;
     }
 
+    let amountValue = 0;
+    if (!isFixed) {
+      const numericAmount = parseInputValue(amount);
+      amountValue = parseFloat(numericAmount);
+
+      if (isNaN(amountValue) || amountValue <= 0) {
+        showToast({
+          title: 'Validation error',
+          description: 'Please enter a valid amount greater than 0.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
       const newTransaction = await financeService.createTransaction({
         type,
         frequency,
+        paymentFrequency: isFixed ? paymentFrequency : undefined,
         amount: amountValue,
         categoryId,
         description,
@@ -117,7 +130,9 @@ export function CreateTransactionModal({
       resetForm();
       showToast({
         title: 'Transaction created',
-        description: 'Your new transaction has been successfully created.',
+        description: isFixed
+          ? 'Your fixed transaction has been created. You can now add payments to it.'
+          : 'Your transaction has been successfully created.',
       });
     } catch (error) {
       console.error('Create transaction error:', error);
@@ -147,9 +162,13 @@ export function CreateTransactionModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Transaction</DialogTitle>
+          <DialogTitle>
+            {isFixed ? 'Create Fixed Transaction' : 'Create New Transaction'}
+          </DialogTitle>
           <DialogDescription>
-            Add a new transaction to track your finances.
+            {isFixed
+              ? 'Create a recurring transaction. You can add payments to it later.'
+              : 'Add a new transaction to track your finances.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,34 +182,6 @@ export function CreateTransactionModal({
               className="bg-input border-border resize-none"
               rows={3}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={amount}
-                onChange={handleAmountChange}
-                required
-                className="bg-input border-border"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="bg-input border-border"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -223,11 +214,65 @@ export function CreateTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed</SelectItem>
-                <SelectItem value="variable">Variable</SelectItem>
+                <SelectItem value="fixed">Fixed (Recurring)</SelectItem>
+                <SelectItem value="variable">Variable (One-time)</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {isFixed && (
+            <div className="space-y-2">
+              <Label htmlFor="paymentFrequency">Payment Frequency</Label>
+              <Select
+                value={paymentFrequency}
+                onValueChange={(value: PaymentFrequency) =>
+                  setPaymentFrequency(value)
+                }
+              >
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="bimonthly">Bimonthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                How often you need to make payments for this transaction
+              </p>
+            </div>
+          )}
+
+          {!isFixed && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  required
+                  className="bg-input border-border"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="bg-input border-border"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
@@ -258,7 +303,11 @@ export function CreateTransactionModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Transaction'}
+              {isLoading
+                ? 'Creating...'
+                : isFixed
+                  ? 'Create Fixed Transaction'
+                  : 'Create Transaction'}
             </Button>
           </div>
         </form>
