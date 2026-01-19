@@ -12,6 +12,7 @@ interface CategoryHeaderProps {
   summaryValue: string | number;
   itemCount: number;
   itemName: string;
+  extraInfo?: string;
 }
 
 export function CategoryHeader({
@@ -24,6 +25,7 @@ export function CategoryHeader({
   summaryValue,
   itemCount,
   itemName,
+  extraInfo,
 }: CategoryHeaderProps) {
   const pluralizedName =
     itemCount === 1
@@ -45,9 +47,14 @@ export function CategoryHeader({
       </div>
       <div className="text-right">
         <div className={`text-lg font-bold ${iconColor}`}>{summaryValue}</div>
-        <span className="text-sm text-muted-foreground">
-          {itemCount} {pluralizedName}
-        </span>
+        <div className="text-sm text-muted-foreground">
+          <span>
+            {itemCount} {pluralizedName}
+          </span>
+          {extraInfo && (
+            <span className="ml-2 text-xs opacity-75">• {extraInfo}</span>
+          )}
+        </div>
       </div>
     </div>
   );
