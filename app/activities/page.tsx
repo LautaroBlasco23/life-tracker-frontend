@@ -26,6 +26,9 @@ import { EntityCard } from '@/components/ui/card/entityCard';
 import { CreateActivityModal } from './modal/create-activity-modal';
 import { EditActivityModal } from './modal/edit-activity-modal';
 import { GenericFilterModal } from '@/components/ui/filterModal/filterModal';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+type DayTimeFilter = 'all' | 'morning' | 'afternoon' | 'evening';
 
 const CATEGORY_CONFIG = {
   notSpecified: {
@@ -124,11 +127,17 @@ export default function ActivitiesPage() {
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>({});
+  const [activeDayTime, setActiveDayTime] = useState<DayTimeFilter>('all');
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
 
   const targetDate =
     viewMode === 'filtered' ? activeFilter.scheduledFor : undefined;
   const dateLabel = formatDateLabel(targetDate);
+
+  const filteredActivities =
+    activeDayTime === 'all'
+      ? activities
+      : activities.filter((activity) => activity.dayTime === activeDayTime);
 
   const loadActivities = useCallback(async () => {
     try {
@@ -334,7 +343,7 @@ export default function ActivitiesPage() {
     }
   };
 
-  const activitiesByCategory = activities.reduce(
+  const activitiesByCategory = filteredActivities.reduce(
     (acc, activity) => {
       const dayTime = activity.dayTime;
       if (!acc[dayTime]) {
@@ -466,6 +475,19 @@ export default function ActivitiesPage() {
             </div>
           </div>
 
+          <Tabs
+            value={activeDayTime}
+            onValueChange={(value) => setActiveDayTime(value as DayTimeFilter)}
+            className="mb-6"
+          >
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="morning">Morning</TabsTrigger>
+              <TabsTrigger value="afternoon">Afternoon</TabsTrigger>
+              <TabsTrigger value="evening">Evening</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {viewMode === 'filtered' && filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
@@ -498,7 +520,7 @@ export default function ActivitiesPage() {
             </div>
           )}
 
-          {activities.length === 0 ? (
+          {filteredActivities.length === 0 ? (
             <Card className="text-center py-12 bg-muted/30">
               <CardContent>
                 <div className="text-muted-foreground mb-4">
@@ -506,14 +528,18 @@ export default function ActivitiesPage() {
                     <Plus className="h-8 w-8" />
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
-                    {viewMode === 'today'
-                      ? 'No activities for today'
-                      : 'No activities match your filters'}
+                    {activeDayTime !== 'all'
+                      ? `No ${activeDayTime} activities`
+                      : viewMode === 'today'
+                        ? 'No activities for today'
+                        : 'No activities match your filters'}
                   </h3>
                   <p>
-                    {viewMode === 'today'
-                      ? 'Create activities to see them appear here on their scheduled days.'
-                      : 'Try adjusting your filters or create new activities.'}
+                    {activeDayTime !== 'all'
+                      ? `You don't have any ${activeDayTime} activities scheduled.`
+                      : viewMode === 'today'
+                        ? 'Create activities to see them appear here on their scheduled days.'
+                        : 'Try adjusting your filters or create new activities.'}
                   </p>
                 </div>
                 {viewMode === 'filtered' ? (
