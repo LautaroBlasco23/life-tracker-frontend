@@ -6,6 +6,7 @@ import type {
   Category,
   MonthlyStats,
   TransactionType,
+  TransactionFrequency,
 } from '@/types';
 import { authService } from './auth-service';
 import { getConfig } from '@/lib/config';
@@ -19,6 +20,7 @@ interface ApiResponse<T> {
 
 interface GetTransactionsParams {
   type?: TransactionType;
+  frequency?: TransactionFrequency;
   startDate?: string;
   endDate?: string;
   month?: number;
@@ -32,10 +34,17 @@ class FinanceService {
     return getConfig().apiUrl;
   }
 
-  async getCategories(type?: TransactionType): Promise<Category[]> {
-    const params = type ? `?type=${type}` : '';
+  async getCategories(
+    type?: TransactionType,
+    frequency?: TransactionFrequency
+  ): Promise<Category[]> {
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (frequency) params.append('frequency', frequency);
+
+    const queryString = params.toString();
     const response = await authService.makeAuthenticatedRequest(
-      `${this.baseUrl}/finances/categories${params}`
+      `${this.baseUrl}/finances/categories${queryString ? `?${queryString}` : ''}`
     );
 
     if (!response.ok) {
@@ -52,6 +61,7 @@ class FinanceService {
     const searchParams = new URLSearchParams();
 
     if (params?.type) searchParams.append('type', params.type);
+    if (params?.frequency) searchParams.append('frequency', params.frequency);
     if (params?.startDate) searchParams.append('start_date', params.startDate);
     if (params?.endDate) searchParams.append('end_date', params.endDate);
     if (params?.month !== undefined)
