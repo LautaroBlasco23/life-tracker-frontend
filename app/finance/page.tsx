@@ -6,7 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
-import type { Transaction, TransactionType, Category } from '@/types';
+import type {
+  Transaction,
+  TransactionType,
+  TransactionFrequency,
+  Category,
+} from '@/types';
 import {
   Plus,
   TrendingUp,
@@ -30,6 +35,7 @@ import {
   MONTHS,
   YEARS,
 } from '@/components/ui/filterModal/filterModal';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export interface TransactionFilter
   extends Record<string, string | number | undefined> {
@@ -88,17 +94,20 @@ export default function FinancePage() {
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>({});
+  const [activeFrequency, setActiveFrequency] =
+    useState<TransactionFrequency>('variable');
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [userTransactions, allCategories] = await Promise.all([
         financeService.getTransactions({
+          frequency: activeFrequency,
           month: activeFilter.month,
           year: activeFilter.year,
           categoryId: activeFilter.categoryId,
         }),
-        financeService.getCategories(),
+        financeService.getCategories(), // Remove frequency filter - fetch ALL categories
       ]);
       setTransactions(userTransactions);
       setCategories(allCategories);
@@ -113,7 +122,7 @@ export default function FinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeFilter]);
+  }, [activeFilter, activeFrequency]);
 
   useEffect(() => {
     loadData();
@@ -305,6 +314,19 @@ export default function FinancePage() {
             </div>
           </div>
 
+          <Tabs
+            value={activeFrequency}
+            onValueChange={(value) =>
+              setActiveFrequency(value as TransactionFrequency)
+            }
+            className="mb-6"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="fixed">Fixed</TabsTrigger>
+              <TabsTrigger value="variable">Variable</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
@@ -386,28 +408,25 @@ export default function FinancePage() {
                       Balance
                     </p>
                     <p
-                      className={`text-2xl font-bold ${
-                        balance >= 0
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-orange-600 dark:text-orange-400'
-                      }`}
+                      className={`text-2xl font-bold ${balance >= 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-orange-600 dark:text-orange-400'
+                        }`}
                     >
                       ${formatCurrency(balance)}
                     </p>
                   </div>
                   <div
-                    className={`p-3 rounded-full ${
-                      balance >= 0
-                        ? 'bg-blue-100 dark:bg-blue-900/30'
-                        : 'bg-orange-100 dark:bg-orange-900/30'
-                    }`}
+                    className={`p-3 rounded-full ${balance >= 0
+                      ? 'bg-blue-100 dark:bg-blue-900/30'
+                      : 'bg-orange-100 dark:bg-orange-900/30'
+                      }`}
                   >
                     <Wallet
-                      className={`h-6 w-6 ${
-                        balance >= 0
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-orange-600 dark:text-orange-400'
-                      }`}
+                      className={`h-6 w-6 ${balance >= 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-orange-600 dark:text-orange-400'
+                        }`}
                     />
                   </div>
                 </div>
@@ -485,7 +504,7 @@ export default function FinancePage() {
                                 variant: isIncome ? 'default' : 'destructive',
                               },
                               {
-                                label: transaction.subcategoryName,
+                                label: transaction.frequency,
                                 variant: 'outline',
                               },
                             ]}
@@ -498,11 +517,10 @@ export default function FinancePage() {
                                   </span>
                                 </div>
                                 <span
-                                  className={`font-semibold text-base sm:text-sm ${
-                                    isIncome
-                                      ? 'text-green-600 dark:text-green-400'
-                                      : 'text-red-600 dark:text-red-400'
-                                  }`}
+                                  className={`font-semibold text-base sm:text-sm ${isIncome
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-red-600 dark:text-red-400'
+                                    }`}
                                 >
                                   {isIncome ? '+' : '-'}$
                                   {formatCurrency(transaction.amount)}
@@ -529,8 +547,7 @@ export default function FinancePage() {
                                       </div>
                                     )}
                                     <div>
-                                      {transaction.type} •{' '}
-                                      {transaction.subcategoryName} • $
+                                      {transaction.type} • {transaction.frequency} • $
                                       {formatCurrency(transaction.amount)}
                                     </div>
                                   </div>
@@ -552,6 +569,7 @@ export default function FinancePage() {
             onOpenChange={setShowCreateModal}
             onTransactionCreated={handleTransactionCreated}
             categories={categories}
+            defaultFrequency={activeFrequency}
           />
 
           <EditTransactionModal

@@ -21,7 +21,12 @@ import {
 } from '@/components/ui/dialog';
 import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
-import type { Transaction, TransactionType, Category } from '@/types';
+import type {
+  Transaction,
+  TransactionType,
+  TransactionFrequency,
+  Category,
+} from '@/types';
 import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
 
 interface EditTransactionModalProps {
@@ -42,8 +47,8 @@ export function EditTransactionModal({
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('outcome');
+  const [frequency, setFrequency] = useState<TransactionFrequency>('variable');
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [date, setDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,8 +57,8 @@ export function EditTransactionModal({
       setDescription(transaction.description || '');
       setAmount(formatInputValue(Math.floor(transaction.amount).toString()));
       setType(transaction.type);
+      setFrequency(transaction.frequency);
       setCategoryId(transaction.categoryId);
-      setSubcategoryId(transaction.subcategoryId);
       setDate(new Date(transaction.date).toISOString().split('T')[0]);
     }
   }, [transaction, open]);
@@ -62,8 +67,8 @@ export function EditTransactionModal({
     setDescription('');
     setAmount('');
     setType('outcome');
+    setFrequency('variable');
     setCategoryId(null);
-    setSubcategoryId(null);
     setDate('');
   };
 
@@ -73,14 +78,18 @@ export function EditTransactionModal({
       const currentCategory = categories.find((cat) => cat.id === categoryId);
       if (currentCategory?.type !== newType) {
         setCategoryId(null);
-        setSubcategoryId(null);
       }
     }
   };
 
-  const handleCategoryChange = (value: string) => {
-    setCategoryId(Number(value));
-    setSubcategoryId(null);
+  const handleFrequencyChange = (newFrequency: TransactionFrequency) => {
+    setFrequency(newFrequency);
+    if (categoryId) {
+      const currentCategory = categories.find((cat) => cat.id === categoryId);
+      if (currentCategory?.applicableToFreq !== newFrequency) {
+        setCategoryId(null);
+      }
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,10 +113,10 @@ export function EditTransactionModal({
       return;
     }
 
-    if (!categoryId || !subcategoryId) {
+    if (!categoryId) {
       showToast({
         title: 'Validation error',
-        description: 'Please select a category and subcategory.',
+        description: 'Please select a category.',
         variant: 'destructive',
       });
       return;
@@ -120,9 +129,9 @@ export function EditTransactionModal({
         transaction.id,
         {
           type,
+          frequency,
           amount: amountValue,
           categoryId,
-          subcategoryId,
           description,
           date: new Date(date).toISOString(),
         }
@@ -155,11 +164,9 @@ export function EditTransactionModal({
 
   if (!transaction) return null;
 
-  const filteredCategories = categories.filter((cat) => cat.type === type);
-  const selectedCategory = categoryId
-    ? categories.find((cat) => cat.id === categoryId)
-    : null;
-  const subcategories = selectedCategory?.subcategories || [];
+  const filteredCategories = categories.filter(
+    (cat) => cat.type === type && cat.applicableToFreq === frequency
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -230,10 +237,28 @@ export function EditTransactionModal({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="edit-frequency">Frequency</Label>
+            <Select
+              value={frequency}
+              onValueChange={(value: TransactionFrequency) =>
+                handleFrequencyChange(value)
+              }
+            >
+              <SelectTrigger className="bg-input border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Fixed</SelectItem>
+                <SelectItem value="variable">Variable</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="edit-category">Category</Label>
             <Select
               value={categoryId?.toString() || ''}
-              onValueChange={handleCategoryChange}
+              onValueChange={(value) => setCategoryId(Number(value))}
             >
               <SelectTrigger className="bg-input border-border">
                 <SelectValue placeholder="Select a category" />
@@ -247,27 +272,6 @@ export function EditTransactionModal({
               </SelectContent>
             </Select>
           </div>
-
-          {categoryId && subcategories.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-subcategory">Subcategory</Label>
-              <Select
-                value={subcategoryId?.toString() || ''}
-                onValueChange={(value) => setSubcategoryId(Number(value))}
-              >
-                <SelectTrigger className="bg-input border-border">
-                  <SelectValue placeholder="Select a subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subcategories.map((subcat) => (
-                    <SelectItem key={subcat.id} value={subcat.id.toString()}>
-                      {subcat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button

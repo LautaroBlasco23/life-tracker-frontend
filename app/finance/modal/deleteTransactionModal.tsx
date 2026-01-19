@@ -74,7 +74,7 @@ export function DeleteTransactionModal({
                   <div className="mb-1">{transaction.description}</div>
                 )}
                 <div>
-                  {transaction.type} • {transaction.subcategoryName} • $
+                  {transaction.type} • {transaction.frequency} • $
                   {transaction.amount.toFixed(2)}
                 </div>
               </div>
