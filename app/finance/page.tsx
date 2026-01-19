@@ -84,9 +84,18 @@ function formatDate(dateString: string): string {
   });
 }
 
+interface SummaryTotals {
+  income: number;
+  outcome: number;
+}
+
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [summaryTotals, setSummaryTotals] = useState<SummaryTotals>({
+    income: 0,
+    outcome: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -96,6 +105,32 @@ export default function FinancePage() {
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>({});
   const [activeFrequency, setActiveFrequency] =
     useState<TransactionFrequency>('variable');
+
+  const loadSummaryTotals = useCallback(async () => {
+    try {
+      const allTransactions = await financeService.getTransactions({
+        month: activeFilter.month,
+        year: activeFilter.year,
+        categoryId: activeFilter.categoryId,
+      });
+
+      const totals = allTransactions.reduce<SummaryTotals>(
+        (acc, t) => {
+          if (t.type === 'income') {
+            acc.income += t.amount;
+          } else {
+            acc.outcome += t.amount;
+          }
+          return acc;
+        },
+        { income: 0, outcome: 0 }
+      );
+
+      setSummaryTotals(totals);
+    } catch (error) {
+      console.error('Failed to load summary totals:', error);
+    }
+  }, [activeFilter.month, activeFilter.year, activeFilter.categoryId]);
 
   const loadData = useCallback(async () => {
     try {
@@ -107,7 +142,7 @@ export default function FinancePage() {
           year: activeFilter.year,
           categoryId: activeFilter.categoryId,
         }),
-        financeService.getCategories(), // Remove frequency filter - fetch ALL categories
+        financeService.getCategories(),
       ]);
       setTransactions(userTransactions);
       setCategories(allCategories);
@@ -127,6 +162,10 @@ export default function FinancePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    loadSummaryTotals();
+  }, [loadSummaryTotals]);
 
   const handleApplyFilter = (filter: TransactionFilter) => {
     setActiveFilter(filter);
@@ -150,6 +189,7 @@ export default function FinancePage() {
       setTransactions(
         transactions.filter((transaction) => transaction.id !== transactionId)
       );
+      loadSummaryTotals();
       showToast({
         title: 'Transaction deleted',
         description: 'The transaction has been successfully deleted.',
@@ -165,8 +205,9 @@ export default function FinancePage() {
     }
   };
 
-  const handleTransactionCreated = (newTransaction: Transaction) => {
+  const handleTransactionCreated = (_newTransaction: Transaction) => {
     loadData();
+    loadSummaryTotals();
     setShowCreateModal(false);
   };
 
@@ -178,6 +219,7 @@ export default function FinancePage() {
           : transaction
       )
     );
+    loadSummaryTotals();
     setShowEditModal(false);
     setEditingTransaction(null);
   };
@@ -199,15 +241,7 @@ export default function FinancePage() {
     {} as Record<TransactionType, Transaction[]>
   );
 
-  const totalIncome = transactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalOutcome = transactions
-    .filter((t) => t.type === 'outcome')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = totalIncome - totalOutcome;
+  const balance = summaryTotals.income - summaryTotals.outcome;
   const filterCount = getActiveFilterCount();
 
   const getFilterBadgeText = (): string | null => {
@@ -364,7 +398,7 @@ export default function FinancePage() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Income</p>
                     <p className="text-2xl font-bold text-muted-foreground">
-                      ${formatCurrency(totalIncome)}
+                      ${formatCurrency(summaryTotals.income)}
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-secondary/10">
@@ -382,7 +416,7 @@ export default function FinancePage() {
                       Expenses
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
-                      ${formatCurrency(totalOutcome)}
+                      ${formatCurrency(summaryTotals.outcome)}
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-secondary/10">
