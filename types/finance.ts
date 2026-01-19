@@ -1,5 +1,6 @@
 export type TransactionType = 'income' | 'outcome';
 export type TransactionFrequency = 'fixed' | 'variable';
+export type PaymentFrequency = 'monthly' | 'bimonthly' | 'yearly';
 
 export interface Category {
   id: number;
@@ -16,6 +17,7 @@ export interface Transaction {
   userId: number;
   type: TransactionType;
   frequency: TransactionFrequency;
+  paymentFrequency?: PaymentFrequency;
   amount: number;
   categoryId: number;
   categoryName: string;
@@ -25,9 +27,38 @@ export interface Transaction {
   updatedAt: string;
 }
 
+export interface PaymentSummary {
+  id: string;
+  amount: number;
+  date: string;
+}
+
+export interface FixedTransaction {
+  id: string;
+  type: TransactionType;
+  paymentFrequency: PaymentFrequency;
+  categoryId: number;
+  categoryName: string;
+  description?: string;
+  totalPaid: number;
+  payments?: PaymentSummary[];
+  currentPeriodPayment?: PaymentSummary;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payment {
+  id: string;
+  transactionId: string;
+  amount: number;
+  date: string;
+  createdAt: string;
+}
+
 export interface CreateTransactionRequest {
   type: TransactionType;
   frequency: TransactionFrequency;
+  paymentFrequency?: PaymentFrequency;
   amount: number;
   categoryId: number;
   description?: string;
@@ -37,9 +68,16 @@ export interface CreateTransactionRequest {
 export interface UpdateTransactionRequest {
   type?: TransactionType;
   frequency?: TransactionFrequency;
+  paymentFrequency?: PaymentFrequency;
   amount?: number;
   categoryId?: number;
   description?: string;
+  date?: string;
+}
+
+export interface CreatePaymentRequest {
+  transactionId: string;
+  amount: number;
   date?: string;
 }
 

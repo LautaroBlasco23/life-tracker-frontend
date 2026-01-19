@@ -7,6 +7,9 @@ import type {
   MonthlyStats,
   TransactionType,
   TransactionFrequency,
+  FixedTransaction,
+  Payment,
+  CreatePaymentRequest,
 } from '@/types';
 import { authService } from './auth-service';
 import { getConfig } from '@/lib/config';
@@ -26,6 +29,18 @@ interface GetTransactionsParams {
   month?: number;
   year?: number;
   categoryId?: number;
+  limit?: number;
+}
+
+interface GetFixedTransactionsParams {
+  month?: number;
+  year?: number;
+}
+
+interface GetPaymentsParams {
+  transactionId?: string;
+  startDate?: string;
+  endDate?: string;
   limit?: number;
 }
 
@@ -149,6 +164,98 @@ class FinanceService {
 
     if (!response.ok) {
       throw new Error('Failed to delete transaction');
+    }
+  }
+
+  async getFixedTransactions(
+    params?: GetFixedTransactionsParams
+  ): Promise<FixedTransaction[]> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.month !== undefined)
+      searchParams.append('month', params.month.toString());
+    if (params?.year !== undefined)
+      searchParams.append('year', params.year.toString());
+
+    const queryString = searchParams.toString();
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/fixed-transactions${queryString ? `?${queryString}` : ''}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch fixed transactions');
+    }
+
+    const result: ApiResponse<FixedTransaction[]> = await response.json();
+    return result.data;
+  }
+
+  async getFixedTransactionWithPayments(id: string): Promise<FixedTransaction> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/fixed-transactions/${id}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch fixed transaction');
+    }
+
+    const result: ApiResponse<FixedTransaction> = await response.json();
+    return result.data;
+  }
+
+  async createPayment(data: CreatePaymentRequest): Promise<Payment> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/payments`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          date: data.date || new Date().toISOString(),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to create payment');
+    }
+
+    const result: ApiResponse<Payment> = await response.json();
+    return result.data;
+  }
+
+  async getPayments(params?: GetPaymentsParams): Promise<Payment[]> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.transactionId)
+      searchParams.append('transaction_id', params.transactionId);
+    if (params?.startDate) searchParams.append('start_date', params.startDate);
+    if (params?.endDate) searchParams.append('end_date', params.endDate);
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+    const queryString = searchParams.toString();
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/payments${queryString ? `?${queryString}` : ''}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch payments');
+    }
+
+    const result: ApiResponse<Payment[]> = await response.json();
+    return result.data;
+  }
+
+  async deletePayment(id: string): Promise<void> {
+    const response = await authService.makeAuthenticatedRequest(
+      `${this.baseUrl}/finances/payments/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete payment');
     }
   }
 
