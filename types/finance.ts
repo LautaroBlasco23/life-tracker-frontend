@@ -1,19 +1,11 @@
 export type TransactionType = 'income' | 'outcome';
+export type TransactionFrequency = 'fixed' | 'variable';
 
 export interface Category {
   id: number;
   name: string;
   type: TransactionType;
-  icon?: string;
-  subcategories?: Subcategory[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Subcategory {
-  id: number;
-  categoryId: number;
-  name: string;
+  applicableToFreq: TransactionFrequency;
   icon?: string;
   createdAt: string;
   updatedAt: string;
@@ -23,11 +15,10 @@ export interface Transaction {
   id: string;
   userId: number;
   type: TransactionType;
+  frequency: TransactionFrequency;
   amount: number;
   categoryId: number;
   categoryName: string;
-  subcategoryId: number;
-  subcategoryName: string;
   description?: string;
   date: string;
   createdAt: string;
@@ -36,18 +27,18 @@ export interface Transaction {
 
 export interface CreateTransactionRequest {
   type: TransactionType;
+  frequency: TransactionFrequency;
   amount: number;
   categoryId: number;
-  subcategoryId: number;
   description?: string;
   date?: string;
 }
 
 export interface UpdateTransactionRequest {
   type?: TransactionType;
+  frequency?: TransactionFrequency;
   amount?: number;
   categoryId?: number;
-  subcategoryId?: number;
   description?: string;
   date?: string;
 }
