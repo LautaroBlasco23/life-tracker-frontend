@@ -1,8 +1,6 @@
 'use client';
-
 import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
-
 import { cn } from '@/lib/utils';
 
 function Tabs({
@@ -17,6 +15,7 @@ function Tabs({
     />
   );
 }
+
 function TabsList({
   className,
   ...props
@@ -25,8 +24,8 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]',
-        'bg-muted/50 dark:bg-muted',
+        'inline-flex h-10 w-fit items-center justify-center rounded-md p-1 gap-1',
+        'bg-surface border border-border',
         className
       )}
       {...props}
@@ -42,10 +41,13 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        'inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50',
-        'text-muted-foreground hover:text-foreground',
-        'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border-border',
-        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:outline-1',
+        'inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-in-out',
+        'border border-transparent',
+        'text-muted-foreground',
+        'hover:text-primary hover:border-primary/50 hover:shadow-[inset_0_0_20px_rgba(97,218,251,0.08)]',
+        'data-[state=active]:bg-surface data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]',
+        'disabled:pointer-events-none disabled:opacity-50',
+        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
