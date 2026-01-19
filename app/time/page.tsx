@@ -344,50 +344,48 @@ export default function TimePage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card className="bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800">
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Total Time
                     </p>
-                    <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                    <p className="text-2xl font-bold text-muted-foreground">
                       {formatTotalTime(stats.totalMinutes)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-full bg-violet-100 dark:bg-violet-900/30">
-                    <Clock className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <Clock className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Entries
                     </p>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-2xl font-bold text-muted-foreground">
                       {stats.recordCount}
                     </p>
                   </div>
-                  <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                    <CalendarDays className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <CalendarDays className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Top Category
                     </p>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    <p className="text-2xl font-bold text-muted-foreground">
                       {stats.topCategory ?? 'N/A'}
                     </p>
                     {stats.topCategory && (
@@ -396,8 +394,8 @@ export default function TimePage() {
                       </p>
                     )}
                   </div>
-                  <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                    <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <Timer className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>

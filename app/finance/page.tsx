@@ -358,76 +358,53 @@ export default function FinancePage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Total Income
-                    </p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <p className="text-sm text-muted-foreground mb-1">Income</p>
+                    <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(totalIncome)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <TrendingUp className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Total Expenses
+                      Expenses
                     </p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(totalOutcome)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
-                    <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <TrendingDown className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card
-              className={
-                balance >= 0
-                  ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-                  : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
-              }
-            >
+            <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Balance
                     </p>
-                    <p
-                      className={`text-2xl font-bold ${balance >= 0
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-orange-600 dark:text-orange-400'
-                        }`}
-                    >
+                    <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(balance)}
                     </p>
                   </div>
-                  <div
-                    className={`p-3 rounded-full ${balance >= 0
-                      ? 'bg-blue-100 dark:bg-blue-900/30'
-                      : 'bg-orange-100 dark:bg-orange-900/30'
-                      }`}
-                  >
-                    <Wallet
-                      className={`h-6 w-6 ${balance >= 0
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-orange-600 dark:text-orange-400'
-                        }`}
-                    />
+                  <div className="p-3 rounded-full bg-secondary/10">
+                    <Wallet className="h-6 w-6 text-secondary" />
                   </div>
                 </div>
               </CardContent>
@@ -517,10 +494,11 @@ export default function FinancePage() {
                                   </span>
                                 </div>
                                 <span
-                                  className={`font-semibold text-base sm:text-sm ${isIncome
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-600 dark:text-red-400'
-                                    }`}
+                                  className={`font-semibold text-base sm:text-sm ${
+                                    isIncome
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}
                                 >
                                   {isIncome ? '+' : '-'}$
                                   {formatCurrency(transaction.amount)}
@@ -547,7 +525,8 @@ export default function FinancePage() {
                                       </div>
                                     )}
                                     <div>
-                                      {transaction.type} • {transaction.frequency} • $
+                                      {transaction.type} •{' '}
+                                      {transaction.frequency} • $
                                       {formatCurrency(transaction.amount)}
                                     </div>
                                   </div>
