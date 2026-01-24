@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
@@ -8,7 +8,17 @@ import { Navigation } from '@/components/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { timeService } from '@/services/time-service';
 import type { TimeRecord } from '@/types/time';
-import { Plus, Clock, Timer, CalendarDays, Filter, X } from 'lucide-react';
+import {
+  Plus,
+  Clock,
+  Timer,
+  CalendarDays,
+  Filter,
+  X,
+  Play,
+  Square,
+  Trash2,
+} from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { CreateTimeRecordModal } from './modal/create-time-record-modal';
 import { EditTimeRecordModal } from './modal/edit-time-record-modal';
@@ -16,14 +26,82 @@ import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { Badge } from '@/components/ui/badge';
 import { TIME_CATEGORIES } from '@/types/time';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   GenericFilterModal,
   MONTHS,
   YEARS,
 } from '@/components/ui/filterModal/filterModal';
 
-export interface TimeRecordFilter
-  extends Record<string, string | number | undefined> {
+type TimePeriodFilter = 'thisWeek' | 'thisMonth' | 'lastMonth' | 'allTime';
+type TimerState = 'idle' | 'running' | 'paused';
+
+function TimerParticles({ isActive }: { isActive: boolean }) {
+  if (!isActive) return null;
+
+  const particles = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 3,
+      duration: 3 + Math.random() * 4,
+      size: 2 + Math.random() * 3,
+      opacity: 0.3 + Math.random() * 0.4,
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-lg">
+      {particles.map((particle) => (
+        <div
+          key={particle.id}
+          className="absolute rounded-full bg-primary animate-float"
+          style={{
+            left: `${particle.left}%`,
+            bottom: '-10px',
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            opacity: particle.opacity,
+            animationDelay: `${particle.delay}s`,
+            animationDuration: `${particle.duration}s`,
+          }}
+        />
+      ))}
+      <style jsx>{`
+        @keyframes float {
+          0% {
+            transform: translateY(0) scale(1);
+            opacity: 0;
+          }
+          10% {
+            opacity: var(--tw-opacity, 0.5);
+          }
+          90% {
+            opacity: var(--tw-opacity, 0.5);
+          }
+          100% {
+            transform: translateY(-150px) scale(0.5);
+            opacity: 0;
+          }
+        }
+        .animate-float {
+          animation: float linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+interface TimeRecordFilter extends Record<string, string | number | undefined> {
   month?: number;
   year?: number;
   category?: string;
@@ -89,6 +167,63 @@ function formatRecordDate(dateString: string): string {
   });
 }
 
+function formatTimerDisplay(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function getTimePeriodDates(period: TimePeriodFilter): {
+  month?: number;
+  year?: number;
+  startDate?: Date;
+  endDate?: Date;
+} {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  switch (period) {
+    case 'thisWeek': {
+      const dayOfWeek = now.getDay();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - dayOfWeek);
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      return { startDate: startOfWeek, endDate: endOfWeek };
+    }
+    case 'thisMonth':
+      return { month: currentMonth, year: currentYear };
+    case 'lastMonth': {
+      const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+      return { month: lastMonth, year: lastMonthYear };
+    }
+    case 'allTime':
+    default:
+      return {};
+  }
+}
+
+function getTimePeriodLabel(period: TimePeriodFilter): string {
+  const now = new Date();
+  switch (period) {
+    case 'thisWeek':
+      return 'This Week';
+    case 'thisMonth':
+      return MONTH_NAMES[now.getMonth()];
+    case 'lastMonth': {
+      const lastMonthIndex = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      return MONTH_NAMES[lastMonthIndex];
+    }
+    case 'allTime':
+      return 'All Time';
+  }
+}
+
 export default function TimePage() {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,17 +231,141 @@ export default function TimePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TimeRecord | null>(null);
+  const [timePeriod, setTimePeriod] = useState<TimePeriodFilter>('thisMonth');
   const [activeFilter, setActiveFilter] = useState<TimeRecordFilter>({});
+
+  const [timerState, setTimerState] = useState<TimerState>('idle');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerCategory, setTimerCategory] = useState<string>('');
+  const [timerDescription, setTimerDescription] = useState('');
+  const [isSavingTimer, setIsSavingTimer] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (timerState === 'running') {
+      startTimeRef.current = Date.now() - elapsedSeconds * 1000;
+      intervalRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          setElapsedSeconds(
+            Math.floor((Date.now() - startTimeRef.current) / 1000)
+          );
+        }
+      }, 1000);
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [timerState, elapsedSeconds]);
+
+  const handleStartTimer = () => {
+    if (!timerCategory) {
+      showToast({
+        title: 'Category required',
+        description: 'Please select a category before starting the timer.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setTimerState('running');
+  };
+
+  const handleStopTimer = () => {
+    setTimerState('paused');
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const handleDiscardTimer = () => {
+    setTimerState('idle');
+    setElapsedSeconds(0);
+    setTimerCategory('');
+    setTimerDescription('');
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const handleSaveTimer = async () => {
+    const totalMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
+
+    if (!timerCategory) {
+      showToast({
+        title: 'Category required',
+        description: 'Please select a category.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!timerDescription.trim()) {
+      showToast({
+        title: 'Description required',
+        description: 'Please enter a description.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSavingTimer(true);
+    try {
+      await timeService.createRecord({
+        category: timerCategory,
+        description: timerDescription,
+        durationMinutes: totalMinutes,
+      });
+
+      showToast({
+        title: 'Time recorded',
+        description: `Saved ${formatDuration(totalMinutes)} for ${timerCategory}.`,
+      });
+
+      handleDiscardTimer();
+      loadRecords();
+    } catch (error) {
+      showToast({
+        title: 'Failed to save',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingTimer(false);
+    }
+  };
 
   const loadRecords = useCallback(async () => {
     try {
       setIsLoading(true);
+      const periodDates = getTimePeriodDates(timePeriod);
       const data = await timeService.getRecords({
         category: activeFilter.category,
-        month: activeFilter.month,
-        year: activeFilter.year,
+        month: activeFilter.month ?? periodDates.month,
+        year: activeFilter.year ?? periodDates.year,
       });
-      setRecords(data);
+
+      let filteredData = data;
+      if (
+        timePeriod === 'thisWeek' &&
+        periodDates.startDate &&
+        periodDates.endDate
+      ) {
+        filteredData = data.filter((record) => {
+          const recordDate = new Date(record.createdAt);
+          return (
+            recordDate >= periodDates.startDate! &&
+            recordDate <= periodDates.endDate!
+          );
+        });
+      }
+
+      setRecords(filteredData);
     } catch (error) {
       console.error('Failed to load records:', error);
       showToast({
@@ -118,14 +377,22 @@ export default function TimePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeFilter]);
+  }, [activeFilter, timePeriod]);
 
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
 
+  const handleTimePeriodChange = (value: string) => {
+    setTimePeriod(value as TimePeriodFilter);
+    setActiveFilter({});
+  };
+
   const handleApplyFilter = (filter: TimeRecordFilter) => {
     setActiveFilter(filter);
+    if (filter.month !== undefined || filter.year !== undefined) {
+      setTimePeriod('allTime');
+    }
   };
 
   const handleClearFilters = () => {
@@ -172,7 +439,7 @@ export default function TimePage() {
     }
   };
 
-  const handleRecordCreated = (newRecord: TimeRecord) => {
+  const handleRecordCreated = (_newRecord: TimeRecord) => {
     loadRecords();
     setShowCreateModal(false);
   };
@@ -226,6 +493,8 @@ export default function TimePage() {
   }, [records]);
 
   const filterCount = getActiveFilterCount();
+  const periodLabel = getTimePeriodLabel(timePeriod);
+  const isTimerActive = timerState !== 'idle';
 
   if (isLoading) {
     return (
@@ -248,7 +517,9 @@ export default function TimePage() {
                 Time Tracking
               </h1>
               <p className="text-sm text-muted-foreground">
-                Log and review how you spend your time
+                {timePeriod === 'allTime'
+                  ? 'All your time records'
+                  : `Viewing ${periodLabel}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -287,7 +558,9 @@ export default function TimePage() {
                 Time Tracking
               </h1>
               <p className="text-muted-foreground">
-                Log and review how you spend your time
+                {timePeriod === 'allTime'
+                  ? 'All your time records'
+                  : `Viewing ${periodLabel}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -318,6 +591,19 @@ export default function TimePage() {
             </div>
           </div>
 
+          <Tabs
+            value={timePeriod}
+            onValueChange={handleTimePeriodChange}
+            className="mb-6"
+          >
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="thisWeek">This Week</TabsTrigger>
+              <TabsTrigger value="thisMonth">This Month</TabsTrigger>
+              <TabsTrigger value="lastMonth">Last Month</TabsTrigger>
+              <TabsTrigger value="allTime">All Time</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
@@ -342,6 +628,123 @@ export default function TimePage() {
               </div>
             </div>
           )}
+
+          <Card
+            className={`mb-8 bg-surface border-secondary/30 transition-all duration-300 relative overflow-hidden ${
+              isTimerActive
+                ? 'border-primary/60 shadow-[0_0_25px_rgba(59,130,246,0.2),inset_0_0_30px_rgba(59,130,246,0.05)]'
+                : ''
+            }`}
+          >
+            <TimerParticles isActive={isTimerActive} />
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Timer
+                  className={`h-5 w-5 ${isTimerActive ? 'text-primary animate-pulse' : 'text-muted-foreground'}`}
+                />
+                <h3 className="font-semibold text-foreground">
+                  {isTimerActive ? 'Recording Time' : 'Start Recording'}
+                </h3>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                <div className="space-y-2">
+                  <Label htmlFor="timer-category">Category</Label>
+                  <Select
+                    value={timerCategory}
+                    onValueChange={setTimerCategory}
+                    disabled={timerState === 'running'}
+                  >
+                    <SelectTrigger id="timer-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timer-description">Description</Label>
+                  <Textarea
+                    id="timer-description"
+                    placeholder="What are you working on?"
+                    value={timerDescription}
+                    onChange={(e) => setTimerDescription(e.target.value)}
+                    rows={1}
+                    className="min-h-[40px] resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-col justify-end">
+                  <div
+                    className={`text-3xl font-mono font-bold text-center mb-2 tabular-nums ${
+                      timerState === 'running'
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {formatTimerDisplay(elapsedSeconds)}
+                  </div>
+
+                  <div className="flex gap-2 justify-center">
+                    {timerState === 'idle' && (
+                      <Button
+                        onClick={handleStartTimer}
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="h-4 w-4" />
+                        Start
+                      </Button>
+                    )}
+
+                    {timerState === 'running' && (
+                      <Button
+                        onClick={handleStopTimer}
+                        variant="destructive"
+                        className="flex items-center gap-2"
+                      >
+                        <Square className="h-4 w-4" />
+                        Stop
+                      </Button>
+                    )}
+
+                    {timerState === 'paused' && (
+                      <>
+                        <Button
+                          onClick={handleStartTimer}
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Play className="h-4 w-4" />
+                          Resume
+                        </Button>
+                        <Button
+                          onClick={handleSaveTimer}
+                          disabled={isSavingTimer}
+                          className="flex items-center gap-2"
+                        >
+                          {isSavingTimer ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button
+                          onClick={handleDiscardTimer}
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card className="bg-surface border-secondary/30 shadow-[inset_0_0_20px_rgba(97,218,251,0.05)]">
@@ -412,12 +815,12 @@ export default function TimePage() {
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {filterCount > 0
                       ? 'No time entries match your filters'
-                      : 'No time entries yet'}
+                      : `No time entries for ${periodLabel.toLowerCase()}`}
                   </h3>
                   <p>
                     {filterCount > 0
                       ? 'Try adjusting your filters or log new time entries.'
-                      : 'Start logging your time to see your records here.'}
+                      : 'Start recording your time or log an entry manually.'}
                   </p>
                 </div>
                 {filterCount > 0 ? (
