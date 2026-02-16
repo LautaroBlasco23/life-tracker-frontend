@@ -1,62 +1,118 @@
-# Life Tracker
+# Life Tracker Frontend
 
-A minimalist life tracking application for organizing daily activities and finances. Built with modern web technologies and a focus on simplicity and user experience.
+Web application for tracking personal activities, finances, spent time, notes and user's profile.
+Developed initially with Vercel V0. Built with Next.js and TypeScript.
 
-## ✨ Features
+![Next.js Version](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-### 🔐 Authentication
+---
 
-- Secure user registration and login
-- Protected routes with session management
-- Persistent authentication state
+## Features
 
-### 📋 Activity Management
+- **Authentication**
+  - Secure user registration and login
+  - Protected routes with session management
+  - Persistent authentication state
 
-- Create, edit, and delete activities
-- Interactive progress tracking (click to increment)
-- Target-based completion system
-- Time-based categories (Morning, Afternoon, Night)
-- Flexible frequency settings (Daily, Weekly with specific days)
-- Visual progress indicators
+- **Activity Tracking**
+  - Create, edit, and delete activities
+  - Interactive progress tracking
+  - Target-based completion system
+  - Time-based categories (Morning, Afternoon, Night)
+  - Flexible frequency settings (Daily, Weekly with specific days)
+  - Visual progress indicators
 
-### 💰 Finance Tracking
+- **Finance Management**
+  - Personal finance tracking interface
+  - Backend integration in progress
 
-- Personal finance management interface
-- _Backend integration in progress_
+- **User Profile**
+  - Profile information management
+  - Avatar upload
+  - Theme preferences (Light/Dark mode)
+  - Account settings
 
-### 👤 User Profile
+- **Architecture & Quality**
+  - Type-safe development with TypeScript
+  - Component-driven architecture
+  - Reusable UI components with shadcn/ui
+  - Form validation with Zod schemas
+  - Responsive design
 
-- Profile information management
-- Avatar upload
-- Theme preferences (Light/Dark)
-- Account settings
+---
 
-## 🚀 Getting Started
+## Tech Stack
+
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS v4** - Utility-first styling
+- **shadcn/ui + Radix UI** - Accessible component primitives
+- **React Hook Form + Zod** - Form handling and validation
+- **date-fns** - Date utilities
+- **Lucide React** - Icon library
+
+---
+
+## Project Structure
+
+```text
+frontend/
+├── app/              # Next.js pages and layouts
+├── components/       # Reusable React components
+├── services/         # API service layer
+├── types/            # TypeScript type definitions
+├── contexts/         # React context providers
+├── lib/              # Utility functions
+├── public/           # Static assets
+├── .env.example
+├── Dockerfile
+├── Makefile
+└── package.json
+```
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 22+
 - npm or yarn
-- Backend API running (see [Backend Repository](#))
+- Backend API running (see backend repository)
 
-### Installation
-
-1. Clone the repository
+### Fastest Path (One Command)
 
 ```bash
-git clone https://github.com/yourusername/life-tracker-frontend.git
-cd life-tracker-frontend
+git clone <your-repo-url>
+cd frontend
+make start
 ```
 
-2. Install dependencies
+Application runs at `http://localhost:3000`
+
+> **Note:** This creates `.env` from `.env.example` and starts the development server.
+
+### Standard Setup (More Control)
 
 ```bash
+# 1. Clone and install dependencies
+git clone <your-repo-url>
+cd frontend
 npm install
+
+# 2. Setup environment
+make setup
+
+# 3. Start development server
+npm run dev
 ```
 
-3. Set up environment variables
+### Environment Configuration
 
 ```bash
+# Create environment file
 cp .env.example .env
 ```
 
@@ -66,43 +122,83 @@ Edit `.env`:
 NEXT_PUBLIC_API_URL=http://localhost:8080/api
 ```
 
-4. Run the development server
+### Available Commands
+
+Run `make help` to see all available commands for development, building, and Docker deployment.
+
+---
+
+## Development
+
+### Prerequisites
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+### Running the Application
+
+Start the development server with hot reload:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Or using Make:
 
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS v4
-- **UI Components:** shadcn/ui + Radix UI
-- **State Management:** React Context API
-- **Form Handling:** React Hook Form + Zod
-- **Icons:** Lucide React
-- **Date Handling:** date-fns
-
-## 📁 Project Structure
-
-```
-├── app/              # Next.js pages and layouts
-├── components/       # Reusable React components
-├── services/         # API service layer
-├── types/            # TypeScript type definitions
-├── contexts/         # React context providers
-├── lib/              # Utility functions
-└── public/           # Static assets
+```bash
+make dev
 ```
 
-## 🐳 Docker Deployment
+### Code Quality
+
+Format and type-check code:
+
+```bash
+make code-check
+```
+
+Format only:
+
+```bash
+npm run format
+```
+
+Lint only:
+
+```bash
+npm run lint
+```
+
+Type check:
+
+```bash
+npm run lint:ts
+```
+
+### Building for Production
+
+```bash
+npm run build
+npm run start
+```
+
+Or using Make:
+
+```bash
+make build
+```
+
+---
+
+## Docker Deployment
 
 Build and run with Docker:
 
 ```bash
-# Production build
+# Build production image
 make build-prod
 
 # Run container
@@ -115,9 +211,9 @@ make logs
 make stop
 ```
 
-See `Makefile` for all available commands.
+---
 
-## 📝 Available Scripts
+## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
@@ -126,25 +222,8 @@ See `Makefile` for all available commands.
 - `npm run lint:ts` - Type check with TypeScript
 - `npm run format` - Format code with Prettier
 
-## 🤝 Contributing
+---
 
-Contributions are welcome! This is an open-source project free for anyone to use and modify.
+## License
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🔗 Links
-
-- [Backend Repository](#) - API server for Life Tracker
-- [Live Demo](#) - Try it out
-
-## 🙏 Acknowledgments
-
-Built with modern open-source technologies and inspired by the need for a simple, effective life tracking solution.
+MIT License - free to use for learning and personal projects.
