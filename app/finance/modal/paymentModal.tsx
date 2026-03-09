@@ -126,7 +126,7 @@ export function PaymentModal({
 
       resetForm();
       onPaymentCreated();
-      await loadTransactionDetails();
+      onOpenChange(false);
     } catch (error) {
       console.error('Create payment error:', error);
       showToast({
