@@ -135,7 +135,10 @@ export function GenericFilterModal<T extends Record<string, FilterValue>>({
                   value={getSelectValue(field.id)}
                   onValueChange={(value) => handleSelectChange(field.id, value)}
                 >
-                  <SelectTrigger id={field.id}>
+                  <SelectTrigger
+                    id={field.id}
+                    className="w-full border-primary"
+                  >
                     <SelectValue placeholder={field.placeholder} />
                   </SelectTrigger>
                   <SelectContent>
