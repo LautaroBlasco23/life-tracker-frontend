@@ -40,6 +40,7 @@ import {
   YEARS,
 } from '@/components/ui/filterModal/filterModal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslations } from '@/contexts/language-context';
 
 export interface TransactionFilter
   extends Record<string, string | number | undefined> {
@@ -101,6 +102,9 @@ interface DolarRate {
 }
 
 export default function FinancePage() {
+  const t = useTranslations('finance');
+  const tCommon = useTranslations('common');
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fixedTransactions, setFixedTransactions] = useState<
     FixedTransaction[]
@@ -278,12 +282,12 @@ export default function FinancePage() {
       );
       loadSummaryTotals();
       showToast({
-        title: 'Transaction deleted',
-        description: 'The transaction has been successfully deleted.',
+        title: t('transactionDeleted'),
+        description: t('transactionDeletedDescription'),
       });
     } catch (error) {
       showToast({
-        title: 'Delete failed',
+        title: t('deleteFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -402,10 +406,10 @@ export default function FinancePage() {
           <div className="flex flex-col gap-4 mb-8 md:hidden">
             <div>
               <h1 className="text-2xl font-semibold text-foreground mb-1">
-                Finance
+                {t('title')}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Track your income and expenses
+                {t('description')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -417,7 +421,7 @@ export default function FinancePage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -433,7 +437,7 @@ export default function FinancePage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New
+                {t('new')}
               </Button>
             </div>
           </div>
@@ -441,11 +445,9 @@ export default function FinancePage() {
           <div className="hidden md:flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
-                Finance
+                {t('title')}
               </h1>
-              <p className="text-muted-foreground">
-                Track your income and expenses
-              </p>
+              <p className="text-muted-foreground">{t('description')}</p>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -455,7 +457,7 @@ export default function FinancePage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -470,7 +472,7 @@ export default function FinancePage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Transaction
+                {t('newTransaction')}
               </Button>
             </div>
           </div>
@@ -483,15 +485,15 @@ export default function FinancePage() {
             className="mb-6"
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="fixed">Fixed</TabsTrigger>
-              <TabsTrigger value="variable">Variable</TabsTrigger>
+              <TabsTrigger value="fixed">{t('fixed')}</TabsTrigger>
+              <TabsTrigger value="variable">{t('variable')}</TabsTrigger>
             </TabsList>
           </Tabs>
 
           {filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
-                Active filters:
+                {tCommon('activeFilters')}
               </span>
               <div className="flex flex-wrap gap-2">
                 {getFilterBadgeText() && (
@@ -512,7 +514,7 @@ export default function FinancePage() {
                   className="h-6 px-2 text-xs"
                 >
                   <X className="h-3 w-3 mr-1" />
-                  Clear all
+                  {tCommon('clearAll')}
                 </Button>
               </div>
             </div>
@@ -523,7 +525,9 @@ export default function FinancePage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Income</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t('income')}
+                    </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(summaryTotals.income)}
                     </p>
@@ -540,7 +544,7 @@ export default function FinancePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Expenses
+                      {t('expenses')}
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(summaryTotals.outcome)}
@@ -558,7 +562,7 @@ export default function FinancePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Balance
+                      {t('balance')}
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       ${formatCurrency(balance)}
@@ -575,7 +579,7 @@ export default function FinancePage() {
           <div className="grid grid-cols-2 gap-4 mb-8">
             {(['oficial', 'blue'] as const).map((key) => {
               const rate = dolarRates[key];
-              const label = key === 'oficial' ? 'USD Oficial' : 'USD Blue';
+              const label = key === 'oficial' ? t('usdOficial') : t('usdBlue');
               const updatedAt = rate
                 ? new Date(rate.fechaActualizacion).toLocaleString('en-US', {
                     month: 'short',
@@ -604,26 +608,30 @@ export default function FinancePage() {
                     ) : rate ? (
                       <>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-muted-foreground">Buy</span>
+                          <span className="text-muted-foreground">
+                            {t('buy')}
+                          </span>
                           <span className="font-semibold text-foreground">
                             ${formatCurrency(rate.compra)}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm mb-3">
-                          <span className="text-muted-foreground">Sell</span>
+                          <span className="text-muted-foreground">
+                            {t('sell')}
+                          </span>
                           <span className="font-semibold text-foreground">
                             ${formatCurrency(rate.venta)}
                           </span>
                         </div>
                         {updatedAt && (
                           <p className="text-xs text-muted-foreground">
-                            Updated {updatedAt}
+                            {t('updated', { date: updatedAt })}
                           </p>
                         )}
                       </>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Unavailable
+                        {t('unavailable')}
                       </p>
                     )}
                   </CardContent>
@@ -641,22 +649,26 @@ export default function FinancePage() {
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {filterCount > 0
-                      ? 'No transactions match your filters'
-                      : `No ${isFixedView ? 'fixed' : 'variable'} transactions yet`}
+                      ? t('noTransactionsMatch')
+                      : t('noTransactionsYet', {
+                          type: isFixedView ? t('fixed') : t('variable'),
+                        })}
                   </h3>
                   <p>
                     {filterCount > 0
-                      ? 'Try adjusting your filters or create new transactions.'
-                      : `Get started by creating your first ${isFixedView ? 'fixed' : 'variable'} transaction.`}
+                      ? t('tryAdjusting')
+                      : t('getStarted', {
+                          type: isFixedView ? t('fixed') : t('variable'),
+                        })}
                   </p>
                 </div>
                 {filterCount > 0 ? (
                   <Button variant="outline" onClick={handleClearFilters}>
-                    Clear filters
+                    {tCommon('clearFilters')}
                   </Button>
                 ) : (
                   <Button onClick={() => setShowCreateModal(true)}>
-                    Create your first transaction
+                    {t('createFirst')}
                   </Button>
                 )}
               </CardContent>
@@ -729,7 +741,7 @@ export default function FinancePage() {
                       accentColor={config.accentColor}
                       iconColor={config.iconColor}
                       summaryValue={`$${formatCurrency(typeTotal)}`}
-                      summaryLabel="Total"
+                      summaryLabel={tCommon('total')}
                       itemCount={typeTransactions.length}
                       itemName="transaction"
                     />
@@ -773,9 +785,9 @@ export default function FinancePage() {
                               handleDeleteTransaction(transaction.id)
                             }
                             deleteModal={{
-                              title: 'Delete Transaction',
+                              title: t('deleteTransaction'),
                               itemName: transaction.categoryName,
-                              confirmLabel: 'Delete Transaction',
+                              confirmLabel: t('deleteTransaction'),
                               itemDetails: (
                                 <div className="text-sm">
                                   <div className="font-medium text-foreground mb-1">
@@ -833,30 +845,30 @@ export default function FinancePage() {
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
-            title="Filter Transactions"
+            title={t('filterTransactions')}
             fields={[
               {
                 id: 'month',
-                label: 'Month',
+                label: t('month'),
                 type: 'select',
                 options: MONTHS,
-                placeholder: 'All months',
+                placeholder: t('allMonths'),
               },
               {
                 id: 'year',
-                label: 'Year',
+                label: t('year'),
                 type: 'select',
                 options: YEARS.map((y) => ({ value: y, label: String(y) })),
-                placeholder: 'All years',
+                placeholder: t('allYears'),
               },
               ...(activeFrequency === 'variable'
                 ? [
                     {
                       id: 'categoryId',
-                      label: 'Category',
+                      label: t('category'),
                       type: 'select' as const,
                       options: createCategoryOptions(categories),
-                      placeholder: 'All categories',
+                      placeholder: t('allCategories'),
                     },
                   ]
                 : []),

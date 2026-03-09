@@ -25,29 +25,13 @@ import {
 import { activityService } from '@/services/activity-service';
 import type { Activity, Frequency, DayOfWeek, DayTime } from '@/types/activity';
 import { showToast } from '@/lib/toast';
+import { useTranslations } from '@/contexts/language-context';
 
 interface CreateActivityModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onActivityCreated: (activity: Activity) => void;
 }
-
-const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
-
-const DAY_TIMES: { value: DayTime; label: string }[] = [
-  { value: 'notSpecified', label: 'Any Moment' },
-  { value: 'morning', label: 'Morning' },
-  { value: 'afternoon', label: 'Afternoon' },
-  { value: 'evening', label: 'Evening' },
-];
 
 export function CreateActivityModal({
   open,
@@ -61,6 +45,32 @@ export function CreateActivityModal({
   const [dayTime, setDayTime] = useState<DayTime>('notSpecified');
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const t = useTranslations('createActivity');
+  const tCommon = useTranslations('common');
+
+  const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
+    { value: 'monday', label: t('monday') },
+    { value: 'tuesday', label: t('tuesday') },
+    { value: 'wednesday', label: t('wednesday') },
+    { value: 'thursday', label: t('thursday') },
+    { value: 'friday', label: t('friday') },
+    { value: 'saturday', label: t('saturday') },
+    { value: 'sunday', label: t('sunday') },
+  ];
+
+  const DAY_TIMES: { value: DayTime; label: string }[] = [
+    { value: 'notSpecified', label: t('anyMoment') },
+    { value: 'morning', label: t('morning') },
+    { value: 'afternoon', label: t('afternoon') },
+    { value: 'evening', label: t('evening') },
+  ];
+
+  const FREQUENCIES: { value: Frequency; label: string }[] = [
+    { value: 'daily', label: t('daily') },
+    { value: 'weekly', label: t('weekly') },
+    { value: 'monthly', label: t('monthly') },
+    { value: 'oneTime', label: t('oneTime') },
+  ];
 
   const resetForm = () => {
     setTitle('');
@@ -76,8 +86,8 @@ export function CreateActivityModal({
 
     if (frequency === 'weekly' && selectedDays.length === 0) {
       showToast({
-        title: 'Validation error',
-        description: 'Please select at least one day for weekly activities.',
+        title: t('validationError'),
+        description: t('selectDayError'),
         variant: 'destructive',
       });
       return;
@@ -86,26 +96,25 @@ export function CreateActivityModal({
     setIsLoading(true);
 
     try {
-      // Updated to use the new service method signature
       const newActivity = await activityService.createActivity({
         title,
         description,
         completionAmount,
         frequency,
-        dayTime, // Changed from category to dayTime
+        dayTime,
         dayFrequency: frequency === 'weekly' ? selectedDays : undefined,
       });
 
       onActivityCreated(newActivity);
       resetForm();
       showToast({
-        title: 'Activity created',
-        description: 'Your new activity has been successfully created.',
+        title: t('activityCreated'),
+        description: t('activityCreatedDescription'),
       });
     } catch (error) {
       console.error('Create activity error:', error);
       showToast({
-        title: 'Creation failed',
+        title: t('creationFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -134,18 +143,16 @@ export function CreateActivityModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Activity</DialogTitle>
-          <DialogDescription>
-            Add a new activity to track your progress and build better habits.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{t('titleLabel')}</Label>
             <Input
               id="title"
               type="text"
-              placeholder="e.g., Morning Workout"
+              placeholder={t('titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -154,10 +161,10 @@ export function CreateActivityModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('descriptionLabel')}</Label>
             <Textarea
               id="description"
-              placeholder="Describe your activity (optional)"
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-input border-border resize-none"
@@ -167,7 +174,7 @@ export function CreateActivityModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="completionAmount">Target Amount</Label>
+              <Label htmlFor="completionAmount">{t('targetAmount')}</Label>
               <Input
                 id="completionAmount"
                 type="number"
@@ -180,7 +187,7 @@ export function CreateActivityModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dayTime">Time of Day</Label>
+              <Label htmlFor="dayTime">{t('timeOfDay')}</Label>
               <Select
                 value={dayTime}
                 onValueChange={(value: DayTime) => setDayTime(value)}
@@ -200,7 +207,7 @@ export function CreateActivityModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="frequency">Frequency</Label>
+            <Label htmlFor="frequency">{t('frequency')}</Label>
             <Select
               value={frequency}
               onValueChange={(value: Frequency) => setFrequency(value)}
@@ -209,17 +216,18 @@ export function CreateActivityModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="oneTime">One Time</SelectItem>
+                {FREQUENCIES.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           {frequency === 'weekly' && (
             <div className="space-y-2">
-              <Label>Days of the week</Label>
+              <Label>{t('daysOfWeek')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {DAYS_OF_WEEK.map((day) => (
                   <div key={day.value} className="flex items-center space-x-2">
@@ -246,10 +254,10 @@ export function CreateActivityModal({
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Activity'}
+              {isLoading ? t('creating') : t('createActivity')}
             </Button>
           </div>
         </form>

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import type { Category } from '@/types';
+import { useTranslations } from '@/contexts/language-context';
 
 type FilterValue = string | number | undefined;
 
@@ -66,9 +67,11 @@ export function GenericFilterModal<T extends Record<string, FilterValue>>({
   currentFilter,
   onApplyFilter,
   fields,
-  title = 'Filter',
+  title,
 }: GenericFilterModalProps<T>) {
   const [filter, setFilter] = useState<T>(currentFilter);
+  const t = useTranslations('filterModal');
+  const tCommon = useTranslations('common');
 
   const handleApply = () => {
     const cleanedFilter = Object.entries(filter).reduce((acc, [key, value]) => {
@@ -123,7 +126,7 @@ export function GenericFilterModal<T extends Record<string, FilterValue>>({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{title ?? t('filter')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -177,13 +180,13 @@ export function GenericFilterModal<T extends Record<string, FilterValue>>({
         <DialogFooter className="flex gap-2 sm:gap-0">
           {hasActiveFilters && (
             <Button variant="ghost" onClick={handleReset} className="mr-auto">
-              Reset
+              {t('reset')}
             </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
-          <Button onClick={handleApply}>Apply Filters</Button>
+          <Button onClick={handleApply}>{t('applyFilters')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

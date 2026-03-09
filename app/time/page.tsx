@@ -41,6 +41,7 @@ import {
   MONTHS,
   YEARS,
 } from '@/components/ui/filterModal/filterModal';
+import { useTranslations } from '@/contexts/language-context';
 
 type TimePeriodFilter = 'thisWeek' | 'thisMonth' | 'lastMonth' | 'allTime';
 type TimerState = 'idle' | 'running' | 'paused';
@@ -208,23 +209,26 @@ function getTimePeriodDates(period: TimePeriodFilter): {
   }
 }
 
-function getTimePeriodLabel(period: TimePeriodFilter): string {
-  const now = new Date();
-  switch (period) {
-    case 'thisWeek':
-      return 'This Week';
-    case 'thisMonth':
-      return MONTH_NAMES[now.getMonth()];
-    case 'lastMonth': {
-      const lastMonthIndex = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-      return MONTH_NAMES[lastMonthIndex];
-    }
-    case 'allTime':
-      return 'All Time';
-  }
-}
-
 export default function TimePage() {
+  const t = useTranslations('time');
+  const tCommon = useTranslations('common');
+
+  const getTimePeriodLabel = (period: TimePeriodFilter): string => {
+    const now = new Date();
+    switch (period) {
+      case 'thisWeek':
+        return t('thisWeek');
+      case 'thisMonth':
+        return MONTH_NAMES[now.getMonth()];
+      case 'lastMonth': {
+        const lastMonthIndex = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        return MONTH_NAMES[lastMonthIndex];
+      }
+      case 'allTime':
+        return t('allTime');
+    }
+  };
+
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -264,8 +268,8 @@ export default function TimePage() {
   const handleStartTimer = () => {
     if (!timerCategory) {
       showToast({
-        title: 'Category required',
-        description: 'Please select a category before starting the timer.',
+        title: t('categoryRequired'),
+        description: t('categoryRequiredDescription'),
         variant: 'destructive',
       });
       return;
@@ -297,7 +301,7 @@ export default function TimePage() {
 
     if (!timerCategory) {
       showToast({
-        title: 'Category required',
+        title: t('categoryRequired'),
         description: 'Please select a category.',
         variant: 'destructive',
       });
@@ -306,8 +310,8 @@ export default function TimePage() {
 
     if (!timerDescription.trim()) {
       showToast({
-        title: 'Description required',
-        description: 'Please enter a description.',
+        title: t('descriptionRequired'),
+        description: t('descriptionRequiredDescription'),
         variant: 'destructive',
       });
       return;
@@ -322,15 +326,18 @@ export default function TimePage() {
       });
 
       showToast({
-        title: 'Time recorded',
-        description: `Saved ${formatDuration(totalMinutes)} for ${timerCategory}.`,
+        title: t('timeRecorded'),
+        description: t('timeRecordedDescription', {
+          duration: formatDuration(totalMinutes),
+          category: timerCategory,
+        }),
       });
 
       handleDiscardTimer();
       loadRecords();
     } catch (error) {
       showToast({
-        title: 'Failed to save',
+        title: t('failedToSave'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -369,7 +376,7 @@ export default function TimePage() {
     } catch (error) {
       console.error('Failed to load records:', error);
       showToast({
-        title: 'Failed to load records',
+        title: t('failedToLoad'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -425,12 +432,12 @@ export default function TimePage() {
       await timeService.deleteRecord(recordId);
       setRecords(records.filter((r) => r.id !== recordId));
       showToast({
-        title: 'Record deleted',
-        description: 'The time entry has been deleted.',
+        title: t('recordDeleted'),
+        description: t('recordDeletedDescription'),
       });
     } catch (error) {
       showToast({
-        title: 'Delete failed',
+        title: t('deleteFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -500,7 +507,7 @@ export default function TimePage() {
     return (
       <AuthGuard>
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-muted-foreground">Loading time records...</div>
+          <div className="text-muted-foreground">{tCommon('loading')}</div>
         </div>
       </AuthGuard>
     );
@@ -514,12 +521,12 @@ export default function TimePage() {
           <div className="flex flex-col gap-4 mb-8 md:hidden">
             <div>
               <h1 className="text-2xl font-semibold text-foreground mb-1">
-                Time Tracking
+                {t('title')}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {timePeriod === 'allTime'
-                  ? 'All your time records'
-                  : `Viewing ${periodLabel}`}
+                  ? t('allRecords')
+                  : t('viewing', { period: periodLabel })}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -531,7 +538,7 @@ export default function TimePage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -547,7 +554,7 @@ export default function TimePage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Log Time
+                {t('logTime')}
               </Button>
             </div>
           </div>
@@ -555,12 +562,12 @@ export default function TimePage() {
           <div className="hidden md:flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
-                Time Tracking
+                {t('title')}
               </h1>
               <p className="text-muted-foreground">
                 {timePeriod === 'allTime'
-                  ? 'All your time records'
-                  : `Viewing ${periodLabel}`}
+                  ? t('allRecords')
+                  : t('viewing', { period: periodLabel })}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -571,7 +578,7 @@ export default function TimePage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -586,7 +593,7 @@ export default function TimePage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Log Time
+                {t('logTime')}
               </Button>
             </div>
           </div>
@@ -597,17 +604,17 @@ export default function TimePage() {
             className="mb-6"
           >
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="thisWeek">This Week</TabsTrigger>
-              <TabsTrigger value="thisMonth">This Month</TabsTrigger>
-              <TabsTrigger value="lastMonth">Last Month</TabsTrigger>
-              <TabsTrigger value="allTime">All Time</TabsTrigger>
+              <TabsTrigger value="thisWeek">{t('thisWeek')}</TabsTrigger>
+              <TabsTrigger value="thisMonth">{t('thisMonth')}</TabsTrigger>
+              <TabsTrigger value="lastMonth">{t('lastMonth')}</TabsTrigger>
+              <TabsTrigger value="allTime">{t('allTime')}</TabsTrigger>
             </TabsList>
           </Tabs>
 
           {filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
-                Active filters:
+                {tCommon('activeFilters')}
               </span>
               <div className="flex flex-wrap gap-2">
                 {getFilterBadgeText() && (
@@ -623,7 +630,7 @@ export default function TimePage() {
                   className="h-6 px-2 text-xs"
                 >
                   <X className="h-3 w-3 mr-1" />
-                  Clear all
+                  {tCommon('clearAll')}
                 </Button>
               </div>
             </div>
@@ -643,20 +650,20 @@ export default function TimePage() {
                   className={`h-5 w-5 ${isTimerActive ? 'text-primary animate-pulse' : 'text-muted-foreground'}`}
                 />
                 <h3 className="font-semibold text-foreground">
-                  {isTimerActive ? 'Recording Time' : 'Start Recording'}
+                  {isTimerActive ? t('recordingTime') : t('startRecording')}
                 </h3>
               </div>
 
               <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-2">
-                  <Label htmlFor="timer-category">Category</Label>
+                  <Label htmlFor="timer-category">{t('category')}</Label>
                   <Select
                     value={timerCategory}
                     onValueChange={setTimerCategory}
                     disabled={timerState === 'running'}
                   >
                     <SelectTrigger id="timer-category">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {TIME_CATEGORIES.map((cat) => (
@@ -669,10 +676,10 @@ export default function TimePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="timer-description">Description</Label>
+                  <Label htmlFor="timer-description">{t('description')}</Label>
                   <Textarea
                     id="timer-description"
-                    placeholder="What are you working on?"
+                    placeholder={t('whatAreYouWorkingOn')}
                     value={timerDescription}
                     onChange={(e) => setTimerDescription(e.target.value)}
                     rows={1}
@@ -698,7 +705,7 @@ export default function TimePage() {
                         className="flex items-center gap-2"
                       >
                         <Play className="h-4 w-4" />
-                        Start
+                        {t('start')}
                       </Button>
                     )}
 
@@ -709,7 +716,7 @@ export default function TimePage() {
                         className="flex items-center gap-2"
                       >
                         <Square className="h-4 w-4" />
-                        Stop
+                        {t('stop')}
                       </Button>
                     )}
 
@@ -721,14 +728,14 @@ export default function TimePage() {
                           className="flex items-center gap-2"
                         >
                           <Play className="h-4 w-4" />
-                          Resume
+                          {t('resume')}
                         </Button>
                         <Button
                           onClick={handleSaveTimer}
                           disabled={isSavingTimer}
                           className="flex items-center gap-2"
                         >
-                          {isSavingTimer ? 'Saving...' : 'Save'}
+                          {isSavingTimer ? t('saving') : t('save')}
                         </Button>
                         <Button
                           onClick={handleDiscardTimer}
@@ -752,7 +759,7 @@ export default function TimePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Total Time
+                      {t('totalTime')}
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       {formatTotalTime(stats.totalMinutes)}
@@ -769,7 +776,7 @@ export default function TimePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Entries
+                      {t('entries')}
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       {stats.recordCount}
@@ -786,7 +793,7 @@ export default function TimePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Top Category
+                      {t('topCategory')}
                     </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       {stats.topCategory ?? 'N/A'}
@@ -814,22 +821,24 @@ export default function TimePage() {
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {filterCount > 0
-                      ? 'No time entries match your filters'
-                      : `No time entries for ${periodLabel.toLowerCase()}`}
+                      ? t('noEntriesMatch')
+                      : t('noEntriesFor', {
+                          period: periodLabel.toLowerCase(),
+                        })}
                   </h3>
                   <p>
                     {filterCount > 0
-                      ? 'Try adjusting your filters or log new time entries.'
-                      : 'Start recording your time or log an entry manually.'}
+                      ? t('tryAdjusting')
+                      : t('startRecordingOrLog')}
                   </p>
                 </div>
                 {filterCount > 0 ? (
                   <Button variant="outline" onClick={handleClearFilters}>
-                    Clear filters
+                    {tCommon('clearFilters')}
                   </Button>
                 ) : (
                   <Button onClick={() => setShowCreateModal(true)}>
-                    Log your first entry
+                    {t('logFirstEntry')}
                   </Button>
                 )}
               </CardContent>
@@ -853,9 +862,9 @@ export default function TimePage() {
                         accentColor={colors.accentColor}
                         iconColor={colors.iconColor}
                         summaryValue={formatTotalTime(categoryTotal)}
-                        summaryLabel="Total"
+                        summaryLabel={tCommon('total')}
                         itemCount={categoryRecords.length}
-                        itemName="entry"
+                        itemName={t('entry')}
                       />
 
                       <div className="space-y-4">
@@ -881,9 +890,9 @@ export default function TimePage() {
                             onEdit={() => handleEditRecord(record)}
                             onDelete={() => handleDeleteRecord(record.id)}
                             deleteModal={{
-                              title: 'Delete Time Entry',
+                              title: t('deleteTimeEntry'),
                               itemName: record.description,
-                              confirmLabel: 'Delete Entry',
+                              confirmLabel: t('deleteEntry'),
                               itemDetails: (
                                 <div className="text-sm">
                                   <div className="font-medium text-foreground mb-1">
@@ -929,31 +938,31 @@ export default function TimePage() {
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
-            title="Filter Time Records"
+            title={t('filterTimeRecords')}
             fields={[
               {
                 id: 'month',
-                label: 'Month',
+                label: t('month'),
                 type: 'select',
                 options: MONTHS,
-                placeholder: 'All months',
+                placeholder: t('allMonths'),
               },
               {
                 id: 'year',
-                label: 'Year',
+                label: t('year'),
                 type: 'select',
                 options: YEARS.map((y) => ({ value: y, label: String(y) })),
-                placeholder: 'All years',
+                placeholder: t('allYears'),
               },
               {
                 id: 'category',
-                label: 'Category',
+                label: t('category'),
                 type: 'select',
                 options: TIME_CATEGORIES.map((cat) => ({
                   value: cat,
                   label: cat,
                 })),
-                placeholder: 'All categories',
+                placeholder: t('allCategories'),
               },
             ]}
           />

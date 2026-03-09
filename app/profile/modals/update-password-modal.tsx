@@ -15,6 +15,7 @@ import {
 import { authService } from '@/services/auth-service';
 import { showToast } from '@/lib/toast';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from '@/contexts/language-context';
 
 interface UpdatePasswordModalProps {
   open: boolean;
@@ -32,6 +33,8 @@ export function UpdatePasswordModal({
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const t = useTranslations('updatePassword');
+  const tCommon = useTranslations('common');
 
   const resetForm = () => {
     setCurrentPassword('');
@@ -54,8 +57,8 @@ export function UpdatePasswordModal({
 
     if (newPassword !== confirmPassword) {
       showToast({
-        title: 'Passwords do not match',
-        description: 'Please make sure your new passwords match.',
+        title: t('passwordsDoNotMatch'),
+        description: t('passwordsDoNotMatchDescription'),
         variant: 'destructive',
       });
       return;
@@ -63,8 +66,8 @@ export function UpdatePasswordModal({
 
     if (newPassword.length < 6) {
       showToast({
-        title: 'Password too short',
-        description: 'Password must be at least 6 characters long.',
+        title: t('passwordTooShort'),
+        description: t('passwordTooShortDescription'),
         variant: 'destructive',
       });
       return;
@@ -77,13 +80,13 @@ export function UpdatePasswordModal({
         newPassword,
       });
       showToast({
-        title: 'Password updated',
-        description: 'Your password has been successfully updated.',
+        title: t('passwordUpdated'),
+        description: t('passwordUpdatedDescription'),
       });
       handleClose(false);
     } catch (error) {
       showToast({
-        title: 'Update failed',
+        title: t('updateFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -97,14 +100,12 @@ export function UpdatePasswordModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Update Password</DialogTitle>
-          <DialogDescription>
-            Enter your current password and choose a new one.
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
+            <Label htmlFor="current-password">{t('currentPassword')}</Label>
             <div className="relative">
               <Input
                 id="current-password"
@@ -130,7 +131,7 @@ export function UpdatePasswordModal({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
+            <Label htmlFor="new-password">{t('newPassword')}</Label>
             <div className="relative">
               <Input
                 id="new-password"
@@ -155,12 +156,10 @@ export function UpdatePasswordModal({
                 )}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Must be at least 6 characters long.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('minLength')}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
+            <Label htmlFor="confirm-password">{t('confirmNewPassword')}</Label>
             <div className="relative">
               <Input
                 id="confirm-password"
@@ -193,10 +192,10 @@ export function UpdatePasswordModal({
               onClick={() => handleClose(false)}
               disabled={isLoading}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update Password'}
+              {isLoading ? t('updating') : t('updatePassword')}
             </Button>
           </DialogFooter>
         </form>

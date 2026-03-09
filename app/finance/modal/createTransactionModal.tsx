@@ -29,6 +29,7 @@ import type {
 import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
 import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
+import { useTranslations } from '@/contexts/language-context';
 
 interface CreateTransactionModalProps {
   open: boolean;
@@ -55,6 +56,8 @@ export function CreateTransactionModal({
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
+  const t = useTranslations('createTransaction');
+  const tCommon = useTranslations('common');
 
   const isFixed = frequency === 'fixed';
 
@@ -91,8 +94,8 @@ export function CreateTransactionModal({
 
     if (!categoryId) {
       showToast({
-        title: 'Validation error',
-        description: 'Please select a category.',
+        title: t('validationError'),
+        description: t('selectCategoryError'),
         variant: 'destructive',
       });
       return;
@@ -105,8 +108,8 @@ export function CreateTransactionModal({
 
       if (isNaN(amountValue) || amountValue <= 0) {
         showToast({
-          title: 'Validation error',
-          description: 'Please enter a valid amount greater than 0.',
+          title: t('validationError'),
+          description: t('invalidAmountError'),
           variant: 'destructive',
         });
         return;
@@ -129,15 +132,15 @@ export function CreateTransactionModal({
       onTransactionCreated(newTransaction);
       resetForm();
       showToast({
-        title: 'Transaction created',
+        title: t('transactionCreated'),
         description: isFixed
-          ? 'Your fixed transaction has been created. You can now add payments to it.'
-          : 'Your transaction has been successfully created.',
+          ? t('fixedCreatedDescription')
+          : t('variableCreatedDescription'),
       });
     } catch (error) {
       console.error('Create transaction error:', error);
       showToast({
-        title: 'Creation failed',
+        title: t('creationFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -162,21 +165,17 @@ export function CreateTransactionModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isFixed ? 'Create Fixed Transaction' : 'Create New Transaction'}
-          </DialogTitle>
+          <DialogTitle>{isFixed ? t('titleFixed') : t('titleNew')}</DialogTitle>
           <DialogDescription>
-            {isFixed
-              ? 'Create a recurring transaction. You can add payments to it later.'
-              : 'Add a new transaction to track your finances.'}
+            {isFixed ? t('descriptionFixed') : t('descriptionNew')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('descriptionLabel')}</Label>
             <Textarea
               id="description"
-              placeholder="Describe your transaction"
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-input border-border resize-none"
@@ -185,7 +184,7 @@ export function CreateTransactionModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{t('type')}</Label>
             <Select
               value={type}
               onValueChange={(value: TransactionType) =>
@@ -196,14 +195,14 @@ export function CreateTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="outcome">Expense</SelectItem>
+                <SelectItem value="income">{t('income')}</SelectItem>
+                <SelectItem value="outcome">{t('expense')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="frequency">Frequency</Label>
+            <Label htmlFor="frequency">{t('frequency')}</Label>
             <Select
               value={frequency}
               onValueChange={(value: TransactionFrequency) =>
@@ -214,15 +213,15 @@ export function CreateTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed (Recurring)</SelectItem>
-                <SelectItem value="variable">Variable (One-time)</SelectItem>
+                <SelectItem value="fixed">{t('fixed')}</SelectItem>
+                <SelectItem value="variable">{t('variable')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {isFixed && (
             <div className="space-y-2">
-              <Label htmlFor="paymentFrequency">Payment Frequency</Label>
+              <Label htmlFor="paymentFrequency">{t('paymentFrequency')}</Label>
               <Select
                 value={paymentFrequency}
                 onValueChange={(value: PaymentFrequency) =>
@@ -233,13 +232,13 @@ export function CreateTransactionModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="bimonthly">Bimonthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="monthly">{t('monthly')}</SelectItem>
+                  <SelectItem value="bimonthly">{t('bimonthly')}</SelectItem>
+                  <SelectItem value="yearly">{t('yearly')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                How often you need to make payments for this transaction
+                {t('paymentFrequencyHint')}
               </p>
             </div>
           )}
@@ -247,7 +246,7 @@ export function CreateTransactionModal({
           {!isFixed && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
+                <Label htmlFor="amount">{t('amount')}</Label>
                 <Input
                   id="amount"
                   type="text"
@@ -261,7 +260,7 @@ export function CreateTransactionModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">{t('date')}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -275,13 +274,13 @@ export function CreateTransactionModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{t('category')}</Label>
             <Select
               value={categoryId?.toString() || ''}
               onValueChange={(value) => setCategoryId(Number(value))}
             >
               <SelectTrigger className="bg-input border-border">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={t('selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {filteredCategories.map((cat) => (
@@ -300,14 +299,14 @@ export function CreateTransactionModal({
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading
-                ? 'Creating...'
+                ? t('creating')
                 : isFixed
-                  ? 'Create Fixed Transaction'
-                  : 'Create Transaction'}
+                  ? t('createFixed')
+                  : t('createTransaction')}
             </Button>
           </div>
         </form>

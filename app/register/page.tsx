@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card';
 import { authService } from '@/services/auth-service';
 import { showToast } from '@/lib/toast';
+import { useTranslations } from '@/contexts/language-context';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -29,6 +30,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const router = useRouter();
+  const t = useTranslations('auth');
 
   const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
   const showPasswordError = passwordTouched && !isPasswordValid;
@@ -38,8 +40,8 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       showToast({
-        title: 'Password mismatch',
-        description: 'Passwords do not match. Please try again.',
+        title: t('passwordMismatch'),
+        description: t('passwordMismatchDescription'),
         variant: 'destructive',
       });
       return;
@@ -47,8 +49,10 @@ export default function RegisterPage() {
 
     if (!isPasswordValid) {
       showToast({
-        title: 'Password too short',
-        description: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+        title: t('passwordTooShort'),
+        description: t('passwordTooShortDescription', {
+          min: MIN_PASSWORD_LENGTH,
+        }),
         variant: 'destructive',
       });
       return;
@@ -59,15 +63,15 @@ export default function RegisterPage() {
     try {
       await authService.register({ firstName, lastName, email, password });
       showToast({
-        title: 'Account created',
-        description: 'Your account has been created successfully.',
+        title: t('accountCreated'),
+        description: t('accountCreatedDescription'),
       });
       router.push('/activities');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An error occurred';
       showToast({
-        title: 'Registration failed',
+        title: t('registrationFailed'),
         description: errorMessage,
         variant: 'destructive',
       });
@@ -81,21 +85,21 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold text-center">
-            Create account
+            {t('createAccount')}
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            Enter your information to create your account
+            {t('createAccountDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
+                <Label htmlFor="firstName">{t('firstName')}</Label>
                 <Input
                   id="firstName"
                   type="text"
-                  placeholder="John"
+                  placeholder={t('firstNamePlaceholder')}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
@@ -103,11 +107,11 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
+                <Label htmlFor="lastName">{t('lastName')}</Label>
                 <Input
                   id="lastName"
                   type="text"
-                  placeholder="Doe"
+                  placeholder={t('lastNamePlaceholder')}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
@@ -116,11 +120,11 @@ export default function RegisterPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="john@example.com"
+                placeholder={t('emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -128,10 +132,10 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <PasswordInput
                 id="password"
-                placeholder="Create a password"
+                placeholder={t('createPasswordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setPasswordTouched(true)}
@@ -141,16 +145,15 @@ export default function RegisterPage() {
               />
               {showPasswordError && (
                 <p className="text-sm text-destructive">
-                  Password must be at least {MIN_PASSWORD_LENGTH} characters
-                  long
+                  {t('passwordMinLength', { min: MIN_PASSWORD_LENGTH })}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
               <PasswordInput
                 id="confirmPassword"
-                placeholder="Confirm your password"
+                placeholder={t('confirmPasswordPlaceholder')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -158,14 +161,14 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? t('creatingAccount') : t('createAccount')}
             </Button>
           </form>
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {t('haveAccount')}{' '}
               <Link href="/login" className="text-primary hover:underline">
-                Sign in
+                {t('signIn')}
               </Link>
             </p>
           </div>

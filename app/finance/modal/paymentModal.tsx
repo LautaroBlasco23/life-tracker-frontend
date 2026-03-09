@@ -30,6 +30,7 @@ import {
   parseInputValue,
 } from '@/utils/formatNumbers';
 import { Calendar, DollarSign, Trash2, Plus, History } from 'lucide-react';
+import { useTranslations } from '@/contexts/language-context';
 
 interface PaymentModalProps {
   open: boolean;
@@ -58,6 +59,8 @@ export function PaymentModal({
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [payments, setPayments] = useState<PaymentSummary[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
+  const t = useTranslations('paymentModal');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (transaction && open) {
@@ -103,8 +106,8 @@ export function PaymentModal({
 
     if (isNaN(amountValue) || amountValue <= 0) {
       showToast({
-        title: 'Validation error',
-        description: 'Please enter a valid amount greater than 0.',
+        title: tCommon('error'),
+        description: t('invalidAmount'),
         variant: 'destructive',
       });
       return;
@@ -120,8 +123,10 @@ export function PaymentModal({
       });
 
       showToast({
-        title: 'Payment recorded',
-        description: `Payment of $${formatCurrency(amountValue)} has been recorded.`,
+        title: t('paymentRecorded'),
+        description: t('paymentRecordedDescription', {
+          amount: formatCurrency(amountValue),
+        }),
       });
 
       resetForm();
@@ -130,7 +135,7 @@ export function PaymentModal({
     } catch (error) {
       console.error('Create payment error:', error);
       showToast({
-        title: 'Payment failed',
+        title: t('paymentFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -144,14 +149,14 @@ export function PaymentModal({
     try {
       await financeService.deletePayment(paymentId);
       showToast({
-        title: 'Payment deleted',
-        description: 'The payment has been removed.',
+        title: t('paymentDeleted'),
+        description: t('paymentDeletedDescription'),
       });
       onPaymentCreated();
       await loadTransactionDetails();
     } catch (error) {
       showToast({
-        title: 'Delete failed',
+        title: t('deleteFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -177,10 +182,10 @@ export function PaymentModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            Record Payment
+            {t('title')}
           </DialogTitle>
           <DialogDescription>
-            Add a payment for this fixed {isIncome ? 'income' : 'expense'}.
+            {isIncome ? t('descriptionIncome') : t('descriptionExpense')}
           </DialogDescription>
         </DialogHeader>
 
@@ -204,7 +209,7 @@ export function PaymentModal({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total paid</span>
+              <span className="text-muted-foreground">{t('totalPaid')}</span>
               <span
                 className={`font-semibold ${
                   isIncome
@@ -221,7 +226,7 @@ export function PaymentModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="payment-amount">Amount</Label>
+              <Label htmlFor="payment-amount">{t('amount')}</Label>
               <Input
                 id="payment-amount"
                 type="text"
@@ -235,7 +240,7 @@ export function PaymentModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment-date">Date</Label>
+              <Label htmlFor="payment-date">{t('date')}</Label>
               <Input
                 id="payment-date"
                 type="date"
@@ -249,11 +254,11 @@ export function PaymentModal({
 
           <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? (
-              'Recording...'
+              t('recording')
             ) : (
               <>
                 <Plus className="h-4 w-4 mr-2" />
-                Record Payment
+                {t('recordPayment')}
               </>
             )}
           </Button>
@@ -265,14 +270,14 @@ export function PaymentModal({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <History className="h-4 w-4" />
-                Payment History ({payments.length})
+                {t('paymentHistory', { count: payments.length })}
               </div>
 
               <ScrollArea className="h-[200px] pr-4">
                 <div className="space-y-2">
                   {isLoadingDetails ? (
                     <div className="text-center text-muted-foreground py-4">
-                      Loading payments...
+                      {t('loadingPayments')}
                     </div>
                   ) : (
                     payments.map((payment) => (

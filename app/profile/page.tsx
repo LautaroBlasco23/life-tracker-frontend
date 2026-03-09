@@ -24,8 +24,11 @@ import { LogOut, KeyRound, Mail } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { UpdatePasswordModal } from './modals/update-password-modal';
 import { UpdateEmailModal } from './modals/update-email-modal';
+import { useTranslations } from '@/contexts/language-context';
 
 export default function ProfilePage() {
+  const t = useTranslations('profile');
+
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -69,12 +72,12 @@ export default function ProfilePage() {
       });
       setUser(updatedUser);
       showToast({
-        title: 'Profile updated',
-        description: 'Your profile has been successfully updated.',
+        title: t('profileUpdated'),
+        description: t('profileUpdatedDescription'),
       });
     } catch (error) {
       showToast({
-        title: 'Update failed',
+        title: t('updateFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -93,13 +96,13 @@ export default function ProfilePage() {
       const updatedUser = await userService.uploadProfilePicture(file);
       setUser(updatedUser);
       showToast({
-        title: 'Profile picture updated',
-        description: 'Your profile picture has been successfully updated.',
+        title: t('profilePictureUpdated'),
+        description: t('profilePictureUpdatedDescription'),
       });
       e.target.value = '';
     } catch (error) {
       showToast({
-        title: 'Upload failed',
+        title: t('uploadFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -112,8 +115,8 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     await authService.logout();
     showToast({
-      title: 'Signed out',
-      description: 'You have been successfully signed out.',
+      title: t('signedOut'),
+      description: t('signedOutDescription'),
     });
     router.push('/login');
   };
@@ -126,7 +129,7 @@ export default function ProfilePage() {
     return (
       <AuthGuard>
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="text-muted-foreground">{t('loading')}</div>
         </div>
       </AuthGuard>
     );
@@ -140,19 +143,17 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">
-                Profile
+                {t('title')}
               </h1>
-              <p className="text-muted-foreground">
-                Manage your account settings and preferences
-              </p>
+              <p className="text-muted-foreground">{t('description')}</p>
             </div>
             <ThemeToggle />
           </div>
           <div className="space-y-6">
             <Card className="bg-muted/30">
               <CardHeader>
-                <CardTitle>Profile Picture</CardTitle>
-                <CardDescription>Update your profile picture</CardDescription>
+                <CardTitle>{t('profilePicture')}</CardTitle>
+                <CardDescription>{t('updateProfilePicture')}</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center space-x-6">
                 <Avatar className="h-20 w-20">
@@ -173,7 +174,7 @@ export default function ProfilePage() {
                       asChild
                     >
                       <span>
-                        {isUploadingImage ? 'Uploading...' : 'Change picture'}
+                        {isUploadingImage ? t('uploading') : t('changePicture')}
                       </span>
                     </Button>
                   </Label>
@@ -185,21 +186,21 @@ export default function ProfilePage() {
                     className="hidden"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    JPG, PNG or WebP. Max size 10MB.
+                    {t('pictureSizeHint')}
                   </p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-muted/30">
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your personal details</CardDescription>
+                <CardTitle>{t('personalInformation')}</CardTitle>
+                <CardDescription>{t('updatePersonalDetails')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSave} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First name</Label>
+                      <Label htmlFor="firstName">{t('firstName')}</Label>
                       <Input
                         id="firstName"
                         type="text"
@@ -209,7 +210,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Last name</Label>
+                      <Label htmlFor="lastName">{t('lastName')}</Label>
                       <Input
                         id="lastName"
                         type="text"
@@ -220,7 +221,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('email')}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -229,27 +230,25 @@ export default function ProfilePage() {
                       className="bg-muted"
                     />
                     <p className="text-xs text-muted-foreground">
-                      You can change your email in Account Information below.
+                      {t('emailChangeHint')}
                     </p>
                   </div>
                   <Button type="submit" disabled={isSaving}>
-                    {isSaving ? 'Saving...' : 'Save changes'}
+                    {isSaving ? t('saving') : t('saveChanges')}
                   </Button>
                 </form>
               </CardContent>
             </Card>
             <Card className="bg-muted/30">
               <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  View your account details and manage security
-                </CardDescription>
+                <CardTitle>{t('accountInformation')}</CardTitle>
+                <CardDescription>{t('viewAccountDetails')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">
-                      Member since
+                      {t('memberSince')}
                     </Label>
                     <p className="text-sm text-foreground">
                       {user?.createdAt
@@ -259,7 +258,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">
-                      Last updated
+                      {t('lastUpdated')}
                     </Label>
                     <p className="text-sm text-foreground">
                       {user?.updatedAt
@@ -276,7 +275,7 @@ export default function ProfilePage() {
                       className="flex-1 flex items-center justify-center gap-2"
                     >
                       <KeyRound className="h-4 w-4" />
-                      Change Password
+                      {t('changePassword')}
                     </Button>
                     <Button
                       variant="outline"
@@ -284,7 +283,7 @@ export default function ProfilePage() {
                       className="flex-1 flex items-center justify-center gap-2"
                     >
                       <Mail className="h-4 w-4" />
-                      Change Email
+                      {t('changeEmail')}
                     </Button>
                   </div>
                   <Button
@@ -293,7 +292,7 @@ export default function ProfilePage() {
                     className="w-full flex items-center gap-2 text-destructive hover:text-destructive-foreground hover:bg-destructive bg-transparent"
                   >
                     <LogOut className="h-4 w-4" />
-                    Sign out
+                    {t('signOut')}
                   </Button>
                 </div>
               </CardContent>

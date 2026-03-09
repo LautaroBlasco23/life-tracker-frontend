@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from '@/contexts/language-context';
 
 interface DeleteModalProps {
   open: boolean;
@@ -29,9 +30,11 @@ export function DeleteModal({
   itemName,
   itemDetails,
   onConfirm,
-  confirmLabel = 'Delete',
+  confirmLabel,
 }: DeleteModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const t = useTranslations('deleteModal');
+  const tCommon = useTranslations('common');
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -53,17 +56,13 @@ export function DeleteModal({
             </div>
             <div>
               <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone.
-              </DialogDescription>
+              <DialogDescription>{t('cannotBeUndone')}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Are you sure you want to delete{' '}
-            <span className="font-medium text-foreground">"{itemName}"</span>?
-            This will permanently remove it from your records.
+            {t('areYouSure', { name: itemName })}
           </p>
           <div className="bg-muted/50 rounded-lg p-3 border border-border">
             {itemDetails}
@@ -75,14 +74,14 @@ export function DeleteModal({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : confirmLabel}
+            {isDeleting ? t('deleting') : (confirmLabel ?? tCommon('delete'))}
           </Button>
         </DialogFooter>
       </DialogContent>

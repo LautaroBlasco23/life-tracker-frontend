@@ -17,12 +17,14 @@ import {
 } from '@/components/ui/card';
 import { authService } from '@/services/auth-service';
 import { showToast } from '@/lib/toast';
+import { useTranslations } from '@/contexts/language-context';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const t = useTranslations('auth');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +33,13 @@ export default function LoginPage() {
     try {
       await authService.login({ email, password });
       showToast({
-        title: 'Welcome back',
-        description: 'You have been successfully logged in.',
+        title: t('welcomeBack'),
+        description: t('welcomeBackDescription'),
       });
       router.push('/activities');
     } catch (error) {
       showToast({
-        title: 'Login failed',
+        title: t('loginFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -52,20 +54,20 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold text-center">
-            Sign in
+            {t('signIn')}
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            Enter your credentials to access your account
+            {t('signInDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="john@example.com"
+                placeholder={t('emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -73,10 +75,10 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <PasswordInput
                 id="password"
-                placeholder="Enter your password"
+                placeholder={t('passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -84,14 +86,14 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? t('signingIn') : t('signIn')}
             </Button>
           </form>
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {"Don't have an account? "}
+              {t('noAccount')}{' '}
               <Link href="/register" className="text-primary hover:underline">
-                Sign up
+                {t('signUp')}
               </Link>
             </p>
           </div>

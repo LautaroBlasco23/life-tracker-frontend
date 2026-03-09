@@ -27,53 +27,9 @@ import { CreateActivityModal } from './modal/create-activity-modal';
 import { EditActivityModal } from './modal/edit-activity-modal';
 import { GenericFilterModal } from '@/components/ui/filterModal/filterModal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslations } from '@/contexts/language-context';
 
 type DayTimeFilter = 'all' | 'morning' | 'afternoon' | 'evening';
-
-const CATEGORY_CONFIG = {
-  notSpecified: {
-    label: 'Any Moment',
-    icon: Clock,
-    description: 'Flexible timing',
-    accentColor: 'border-slate-400',
-    iconColor: 'text-slate-500',
-  },
-  morning: {
-    label: 'Morning',
-    icon: Sun,
-    description: 'Start your day right',
-    accentColor: 'border-amber-400',
-    iconColor: 'text-amber-500',
-  },
-  afternoon: {
-    label: 'Afternoon',
-    icon: CloudSun,
-    description: 'Keep the momentum going',
-    accentColor: 'border-sky-400',
-    iconColor: 'text-sky-500',
-  },
-  evening: {
-    label: 'Evening',
-    icon: Moon,
-    description: 'Wind down and reflect',
-    accentColor: 'border-indigo-400',
-    iconColor: 'text-indigo-500',
-  },
-} as const;
-
-const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'oneTime', label: 'One-time' },
-];
-
-const DAY_TIME_OPTIONS = [
-  { value: 'notSpecified', label: 'Any Moment' },
-  { value: 'morning', label: 'Morning' },
-  { value: 'afternoon', label: 'Afternoon' },
-  { value: 'evening', label: 'Evening' },
-];
 
 type ViewMode = 'today' | 'filtered';
 
@@ -119,6 +75,54 @@ function formatDayFrequency(dayFrequency?: string): string | null {
 }
 
 export default function ActivitiesPage() {
+  const t = useTranslations('activities');
+  const tCommon = useTranslations('common');
+
+  const CATEGORY_CONFIG = {
+    notSpecified: {
+      label: t('anyMoment'),
+      icon: Clock,
+      description: t('flexibleTiming'),
+      accentColor: 'border-slate-400',
+      iconColor: 'text-slate-500',
+    },
+    morning: {
+      label: t('morning'),
+      icon: Sun,
+      description: t('startYourDay'),
+      accentColor: 'border-amber-400',
+      iconColor: 'text-amber-500',
+    },
+    afternoon: {
+      label: t('afternoon'),
+      icon: CloudSun,
+      description: t('keepMomentum'),
+      accentColor: 'border-sky-400',
+      iconColor: 'text-sky-500',
+    },
+    evening: {
+      label: t('evening'),
+      icon: Moon,
+      description: t('windDown'),
+      accentColor: 'border-indigo-400',
+      iconColor: 'text-indigo-500',
+    },
+  } as const;
+
+  const FREQUENCY_OPTIONS = [
+    { value: 'daily', label: t('daily') },
+    { value: 'weekly', label: t('weekly') },
+    { value: 'monthly', label: t('monthly') },
+    { value: 'oneTime', label: t('oneTime') },
+  ];
+
+  const DAY_TIME_OPTIONS = [
+    { value: 'notSpecified', label: t('anyMoment') },
+    { value: 'morning', label: t('morning') },
+    { value: 'afternoon', label: t('afternoon') },
+    { value: 'evening', label: t('evening') },
+  ];
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -150,7 +154,7 @@ export default function ActivitiesPage() {
     } catch (error) {
       console.error('Failed to load activities:', error);
       showToast({
-        title: 'Failed to load activities',
+        title: t('failedToLoad'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -186,12 +190,12 @@ export default function ActivitiesPage() {
         activities.filter((activity) => activity.id !== activityId)
       );
       showToast({
-        title: 'Activity deleted',
-        description: 'The activity has been successfully deleted.',
+        title: t('activityDeleted'),
+        description: t('activityDeletedDescription'),
       });
     } catch (error) {
       showToast({
-        title: 'Delete failed',
+        title: t('deleteFailed'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -235,8 +239,8 @@ export default function ActivitiesPage() {
   const handleRecordCompletion = async (activity: Activity) => {
     if (activity.isCompletedToday) {
       showToast({
-        title: 'Activity Complete',
-        description: `This activity is already completed for ${dateLabel}!`,
+        title: t('activityComplete'),
+        description: t('activityAlreadyCompleted', { date: dateLabel }),
         variant: 'default',
       });
       return;
@@ -269,10 +273,13 @@ export default function ActivitiesPage() {
       await activityService.recordActivity(activity.id, { completionDate });
 
       showToast({
-        title: isNowCompleted ? 'Activity Completed!' : 'Progress Updated',
+        title: isNowCompleted ? t('activityCompleted') : t('progressUpdated'),
         description: isNowCompleted
-          ? `Great job! You've completed "${activity.title}" for ${dateLabel}.`
-          : `Progress: ${newCompletions}/${activity.completionAmount}`,
+          ? t('greatJob', { title: activity.title, date: dateLabel })
+          : t('progress', {
+              current: newCompletions,
+              total: activity.completionAmount,
+            }),
         variant: 'default',
       });
     } catch (error) {
@@ -320,8 +327,11 @@ export default function ActivitiesPage() {
       await activityService.revertLastCompletion(activity.id, revertDate);
 
       showToast({
-        title: 'Completion Reverted',
-        description: `Removed one completion from "${activity.title}" for ${dateLabel}.`,
+        title: t('completionReverted'),
+        description: t('revertedDescription', {
+          title: activity.title,
+          date: dateLabel,
+        }),
         variant: 'default',
       });
     } catch (error) {
@@ -358,21 +368,22 @@ export default function ActivitiesPage() {
   const filterCount = getActiveFilterCount();
 
   const getPageTitle = (): string => {
-    if (viewMode === 'today') return "Today's Activities";
+    if (viewMode === 'today') return t('title');
     if (activeFilter.scheduledFor) {
       const date = parseLocalDate(activeFilter.scheduledFor);
-      return `Activities for ${date.toLocaleDateString()}`;
+      return t('titleForDate', { date: date.toLocaleDateString() });
     }
-    return 'Filtered Activities';
+    return t('titleFiltered');
   };
 
   const getPageDescription = (): string => {
-    if (viewMode === 'today')
-      return 'Track and complete your activities for today';
+    if (viewMode === 'today') return t('description');
     const parts: string[] = [];
     if (activeFilter.frequency) parts.push(activeFilter.frequency);
     if (activeFilter.dayTime) parts.push(activeFilter.dayTime);
-    return parts.length > 0 ? `Showing: ${parts.join(', ')}` : 'All activities';
+    return parts.length > 0
+      ? t('descriptionShowing', { parts: parts.join(', ') })
+      : t('descriptionFiltered');
   };
 
   const buildActivityBadges = (activity: Activity) => {
@@ -390,7 +401,7 @@ export default function ActivitiesPage() {
     return (
       <AuthGuard>
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-muted-foreground">Loading activities...</div>
+          <div className="text-muted-foreground">{t('loadingActivities')}</div>
         </div>
       </AuthGuard>
     );
@@ -419,7 +430,7 @@ export default function ActivitiesPage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -435,7 +446,7 @@ export default function ActivitiesPage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Activity
+                {t('newActivity')}
               </Button>
             </div>
           </div>
@@ -455,7 +466,7 @@ export default function ActivitiesPage() {
                 className="flex items-center gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                {tCommon('filters')}
                 {filterCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -470,7 +481,7 @@ export default function ActivitiesPage() {
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Activity
+                {t('newActivity')}
               </Button>
             </div>
           </div>
@@ -481,17 +492,17 @@ export default function ActivitiesPage() {
             className="mb-6"
           >
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="morning">Morning</TabsTrigger>
-              <TabsTrigger value="afternoon">Afternoon</TabsTrigger>
-              <TabsTrigger value="evening">Evening</TabsTrigger>
+              <TabsTrigger value="all">{t('all')}</TabsTrigger>
+              <TabsTrigger value="morning">{t('morning')}</TabsTrigger>
+              <TabsTrigger value="afternoon">{t('afternoon')}</TabsTrigger>
+              <TabsTrigger value="evening">{t('evening')}</TabsTrigger>
             </TabsList>
           </Tabs>
 
           {viewMode === 'filtered' && filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">
-                Active filters:
+                {tCommon('activeFilters')}
               </span>
               <div className="flex flex-wrap gap-2">
                 {activeFilter.frequency && (
@@ -514,7 +525,7 @@ export default function ActivitiesPage() {
                   className="h-6 px-2 text-xs"
                 >
                   <X className="h-3 w-3 mr-1" />
-                  Clear all
+                  {tCommon('clearAll')}
                 </Button>
               </div>
             </div>
@@ -529,26 +540,26 @@ export default function ActivitiesPage() {
                   </div>
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {activeDayTime !== 'all'
-                      ? `No ${activeDayTime} activities`
+                      ? t('noActivitiesForDayTime', { dayTime: activeDayTime })
                       : viewMode === 'today'
-                        ? 'No activities for today'
-                        : 'No activities match your filters'}
+                        ? t('noActivitiesForToday')
+                        : t('noActivitiesMatch')}
                   </h3>
                   <p>
                     {activeDayTime !== 'all'
-                      ? `You don't have any ${activeDayTime} activities scheduled.`
+                      ? t('noDayTimeScheduled', { dayTime: activeDayTime })
                       : viewMode === 'today'
-                        ? 'Create activities to see them appear here on their scheduled days.'
-                        : 'Try adjusting your filters or create new activities.'}
+                        ? t('createToSeeHere')
+                        : t('tryAdjustingFilters')}
                   </p>
                 </div>
                 {viewMode === 'filtered' ? (
                   <Button variant="outline" onClick={handleClearFilters}>
-                    Clear filters
+                    {tCommon('clearFilters')}
                   </Button>
                 ) : (
                   <Button onClick={() => setShowCreateModal(true)}>
-                    Create your first activity
+                    {t('createFirstActivity')}
                   </Button>
                 )}
               </CardContent>
@@ -570,7 +581,7 @@ export default function ActivitiesPage() {
                       accentColor={config.accentColor}
                       iconColor={config.iconColor}
                       summaryValue={categoryActivities.length.toString()}
-                      summaryLabel="Total"
+                      summaryLabel={tCommon('total')}
                       itemCount={categoryActivities.length}
                       itemName="activity"
                     />
@@ -584,8 +595,8 @@ export default function ActivitiesPage() {
                           progress={{
                             current: activity.todayCompletions,
                             total: activity.completionAmount,
-                            completedLabel: 'Complete',
-                            incompleteHint: 'Tap to complete',
+                            completedLabel: t('complete'),
+                            incompleteHint: t('tapToComplete'),
                           }}
                           streak={activity.streak}
                           isCompleted={activity.isCompletedToday}
@@ -597,7 +608,7 @@ export default function ActivitiesPage() {
                             activity.todayCompletions > 0
                               ? [
                                   {
-                                    label: 'Revert Last',
+                                    label: t('revertLast'),
                                     icon: Undo2,
                                     onClick: () =>
                                       handleRevertCompletion(activity),
@@ -607,9 +618,9 @@ export default function ActivitiesPage() {
                               : undefined
                           }
                           deleteModal={{
-                            title: 'Delete Activity',
+                            title: t('deleteActivity'),
                             itemName: activity.title,
-                            confirmLabel: 'Delete Activity',
+                            confirmLabel: t('deleteActivity'),
                             itemDetails: (
                               <div className="text-sm">
                                 <div className="font-medium text-foreground mb-1">
@@ -623,7 +634,7 @@ export default function ActivitiesPage() {
                                   )}
                                   <div>
                                     {activity.frequency} • {activity.dayTime} •
-                                    Target: {activity.completionAmount}
+                                    {t('target')} {activity.completionAmount}
                                   </div>
                                 </div>
                               </div>
@@ -654,27 +665,27 @@ export default function ActivitiesPage() {
             onOpenChange={setShowFilterModal}
             currentFilter={activeFilter}
             onApplyFilter={handleApplyFilter}
-            title="Filter Activities"
+            title={t('filterActivities')}
             fields={[
               {
                 id: 'frequency',
-                label: 'Frequency',
+                label: t('frequency'),
                 type: 'select',
                 options: FREQUENCY_OPTIONS,
-                placeholder: 'All frequencies',
+                placeholder: t('allFrequencies'),
               },
               {
                 id: 'dayTime',
-                label: 'Time of Day',
+                label: t('timeOfDay'),
                 type: 'select',
                 options: DAY_TIME_OPTIONS,
-                placeholder: 'All times',
+                placeholder: t('allTimes'),
               },
               {
                 id: 'scheduledFor',
-                label: 'Scheduled For Date',
+                label: t('scheduledFor'),
                 type: 'date',
-                helperText: 'Show activities scheduled for a specific date',
+                helperText: t('showForDate'),
               },
             ]}
           />

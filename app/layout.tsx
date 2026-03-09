@@ -5,6 +5,7 @@ import { GeistMono } from 'geist/font/mono';
 import { Playfair_Display } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/contexts/theme-context';
+import { LanguageProvider } from '@/contexts/language-context';
 import { Toaster } from 'react-hot-toast';
 import { Suspense } from 'react';
 import './globals.css';
@@ -41,10 +42,12 @@ export default function RootLayout({
       </head>
       <body>
         <Suspense fallback={null}>
-          <ThemeProvider>
-            {children}
-            <Toaster position="bottom-center" />
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              {children}
+              <Toaster position="bottom-center" />
+            </ThemeProvider>
+          </LanguageProvider>
         </Suspense>
         <Analytics />
       </body>
