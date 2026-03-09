@@ -21,6 +21,7 @@ import {
   Calendar,
   Filter,
   X,
+  DollarSign,
 } from 'lucide-react';
 import { financeService } from '@/services/finance-service';
 import { showToast } from '@/lib/toast';
@@ -92,6 +93,13 @@ interface SummaryTotals {
   outcome: number;
 }
 
+interface DolarRate {
+  nombre: string;
+  compra: number;
+  venta: number;
+  fechaActualizacion: string;
+}
+
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fixedTransactions, setFixedTransactions] = useState<
@@ -114,6 +122,11 @@ export default function FinancePage() {
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>({});
   const [activeFrequency, setActiveFrequency] =
     useState<TransactionFrequency>('variable');
+  const [dolarRates, setDolarRates] = useState<{
+    oficial: DolarRate | null;
+    blue: DolarRate | null;
+  }>({ oficial: null, blue: null });
+  const [isLoadingDolar, setIsLoadingDolar] = useState(true);
 
   const loadSummaryTotals = useCallback(async () => {
     try {
@@ -212,6 +225,29 @@ export default function FinancePage() {
   useEffect(() => {
     loadSummaryTotals();
   }, [loadSummaryTotals]);
+
+  useEffect(() => {
+    const loadDolarRates = async () => {
+      setIsLoadingDolar(true);
+      try {
+        const res = await fetch('https://dolarapi.com/v1/dolares');
+        const data = await res.json();
+        const oficial =
+          data.find(
+            (r: DolarRate & { casa: string }) => r.casa === 'oficial'
+          ) ?? null;
+        const blue =
+          data.find((r: DolarRate & { casa: string }) => r.casa === 'blue') ??
+          null;
+        setDolarRates({ oficial, blue });
+      } catch (error) {
+        console.error('Failed to load dolar rates:', error);
+      } finally {
+        setIsLoadingDolar(false);
+      }
+    };
+    loadDolarRates();
+  }, []);
 
   const handleApplyFilter = (filter: TransactionFilter) => {
     setActiveFilter(filter);
@@ -534,6 +570,66 @@ export default function FinancePage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {(['oficial', 'blue'] as const).map((key) => {
+              const rate = dolarRates[key];
+              const label = key === 'oficial' ? 'USD Oficial' : 'USD Blue';
+              const updatedAt = rate
+                ? new Date(rate.fechaActualizacion).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : null;
+
+              return (
+                <Card key={key} className="bg-surface border-secondary/30">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 rounded-full bg-secondary/10">
+                        <DollarSign className="h-4 w-4 text-secondary" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {label}
+                      </span>
+                    </div>
+                    {isLoadingDolar ? (
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted/50 rounded animate-pulse w-24" />
+                        <div className="h-4 bg-muted/50 rounded animate-pulse w-20" />
+                      </div>
+                    ) : rate ? (
+                      <>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-muted-foreground">Buy</span>
+                          <span className="font-semibold text-foreground">
+                            ${formatCurrency(rate.compra)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-3">
+                          <span className="text-muted-foreground">Sell</span>
+                          <span className="font-semibold text-foreground">
+                            ${formatCurrency(rate.venta)}
+                          </span>
+                        </div>
+                        {updatedAt && (
+                          <p className="text-xs text-muted-foreground">
+                            Updated {updatedAt}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Unavailable
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {!hasData ? (
