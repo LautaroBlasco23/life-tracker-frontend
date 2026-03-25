@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle } from 'lucide-react';
 import type { Activity } from '@/types/activity';
+import { useTranslations } from '@/contexts/language-context';
 
 interface DeleteActivityModalProps {
   open: boolean;
@@ -27,6 +28,8 @@ export function DeleteActivityModal({
   onConfirmDelete,
 }: DeleteActivityModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const t = useTranslations('activities');
+  const tCommon = useTranslations('common');
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -51,22 +54,15 @@ export function DeleteActivityModal({
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <DialogTitle>Delete Activity</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone.
-              </DialogDescription>
+              <DialogTitle>{t('deleteActivity')}</DialogTitle>
+              <DialogDescription>{tCommon('cannotBeUndone')}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Are you sure you want to delete{' '}
-            <span className="font-medium text-foreground">
-              "{activity.title}"
-            </span>
-            ? This will permanently remove the activity and all its progress
-            data.
+            {tCommon('areYouSure', { name: activity.title })}
           </p>
 
           <div className="bg-muted/50 rounded-lg p-3 border border-border">
@@ -79,8 +75,8 @@ export function DeleteActivityModal({
                   <div className="mb-1">{activity.description}</div>
                 )}
                 <div>
-                  {activity.frequency} • {activity.dayTime} • Target:{' '}
-                  {activity.completionAmount}
+                  {t(activity.frequency)} • {t(activity.dayTime)} •{' '}
+                  {t('target')} {activity.completionAmount}
                 </div>
               </div>
             </div>
@@ -93,14 +89,14 @@ export function DeleteActivityModal({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete Activity'}
+            {isDeleting ? tCommon('deleting') : t('deleteActivity')}
           </Button>
         </DialogFooter>
       </DialogContent>

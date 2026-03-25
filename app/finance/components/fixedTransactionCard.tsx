@@ -11,6 +11,7 @@ import {
   EntityDropdown,
   DropdownMenuItem,
 } from '@/components/ui/card/entityDropdown';
+import { useTranslations } from '@/contexts/language-context';
 
 interface FixedTransactionCardProps {
   transaction: FixedTransaction;
@@ -18,12 +19,6 @@ interface FixedTransactionCardProps {
   onEdit: (transaction: FixedTransaction) => void;
   onDelete: (transactionId: string) => Promise<void>;
 }
-
-const FREQUENCY_LABELS: Record<string, string> = {
-  monthly: 'Monthly',
-  bimonthly: 'Bimonthly',
-  yearly: 'Yearly',
-};
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -40,6 +35,9 @@ export function FixedTransactionCard({
   onDelete,
 }: FixedTransactionCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const t = useTranslations('finance');
+  const tCreate = useTranslations('createTransaction');
+  const tCommon = useTranslations('common');
 
   const isIncome = transaction.type === 'income';
   const isPaidThisPeriod = !!transaction.currentPeriodPayment;
@@ -88,17 +86,16 @@ export function FixedTransactionCard({
                         : 'text-foreground'
                   }`}
                 >
-                  {transaction.categoryName}
+                  {transaction.category}
                 </h3>
                 <Badge
                   variant={isIncome ? 'default' : 'destructive'}
                   className="shrink-0"
                 >
-                  {transaction.type}
+                  {t(transaction.type)}
                 </Badge>
                 <Badge variant="outline" className="shrink-0">
-                  {FREQUENCY_LABELS[transaction.paymentFrequency] ||
-                    transaction.paymentFrequency}
+                  {tCreate(transaction.paymentFrequency || 'monthly')}
                 </Badge>
                 {isPaidThisPeriod && (
                   <Badge
@@ -110,7 +107,7 @@ export function FixedTransactionCard({
                     }`}
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    {isIncome ? 'Received' : 'Paid'}
+                    {isIncome ? t('income') : t('outcome')}
                   </Badge>
                 )}
               </div>
@@ -124,12 +121,16 @@ export function FixedTransactionCard({
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Calendar className="h-4 w-4 shrink-0" />
-                  <span>Created {formatDate(transaction.createdAt)}</span>
+                  <span>
+                    {t('created')} {formatDate(transaction.createdAt)}
+                  </span>
                 </div>
 
                 {isPaidThisPeriod && transaction.currentPeriodPayment && (
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">This period:</span>
+                    <span className="text-muted-foreground">
+                      {t('thisPeriod')}:
+                    </span>
                     <span
                       className={`font-semibold text-base sm:text-sm ${
                         isIncome
@@ -144,7 +145,7 @@ export function FixedTransactionCard({
                 )}
 
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Total:</span>
+                  <span className="text-muted-foreground">{t('total')}:</span>
                   <span className="font-semibold text-muted-foreground">
                     ${formatCurrency(transaction.totalPaid)}
                   </span>
@@ -156,19 +157,19 @@ export function FixedTransactionCard({
               {!isPaidThisPeriod && (
                 <DropdownMenuItem onClick={() => onAddPayment(transaction)}>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Add Payment
+                  {tCreate('recordPayment')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => onEdit(transaction)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {tCommon('edit')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShowDeleteModal(true)}
                 variant="destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {tCommon('delete')}
               </DropdownMenuItem>
             </EntityDropdown>
           </div>
@@ -179,11 +180,11 @@ export function FixedTransactionCard({
         open={showDeleteModal}
         onOpenChange={setShowDeleteModal}
         title="Delete Transaction"
-        itemName={transaction.categoryName}
+        itemName={transaction.category}
         itemDetails={
           <div className="text-sm">
             <div className="font-medium text-foreground mb-1">
-              {transaction.categoryName}
+              {transaction.category}
             </div>
             <div className="text-muted-foreground text-xs">
               {transaction.description && (

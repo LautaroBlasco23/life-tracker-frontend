@@ -28,7 +28,7 @@ interface GetTransactionsParams {
   endDate?: string;
   month?: number;
   year?: number;
-  categoryId?: number;
+  category?: string;
   limit?: number;
 }
 
@@ -83,8 +83,8 @@ class FinanceService {
       searchParams.append('month', params.month.toString());
     if (params?.year !== undefined)
       searchParams.append('year', params.year.toString());
-    if (params?.categoryId !== undefined)
-      searchParams.append('category_id', params.categoryId.toString());
+    if (params?.category !== undefined)
+      searchParams.append('category', params.category);
     if (params?.limit) searchParams.append('limit', params.limit.toString());
 
     const response = await authService.makeAuthenticatedRequest(

@@ -196,5 +196,5 @@ export function GenericFilterModal<T extends Record<string, FilterValue>>({
 export { MONTHS, YEARS };
 
 export function createCategoryOptions(categories: Category[]) {
-  return categories.map((cat) => ({ value: cat.id, label: cat.name }));
+  return categories.map((cat) => ({ value: cat.name, label: cat.name }));
 }

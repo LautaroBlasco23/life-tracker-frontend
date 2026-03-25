@@ -2,14 +2,36 @@ export type TransactionType = 'income' | 'outcome';
 export type TransactionFrequency = 'fixed' | 'variable';
 export type PaymentFrequency = 'monthly' | 'bimonthly' | 'yearly';
 
+export const INCOME_CATEGORIES = [
+  'Primary Income',
+  'Side Income',
+  'Investments',
+  'Other Income',
+] as const;
+
+export const EXPENSE_CATEGORIES = [
+  'Housing & Utilities',
+  'Food & Groceries',
+  'Transportation',
+  'Health & Fitness',
+  'Education',
+  'Entertainment & Travel',
+  'Taxes & Fees',
+  'Pets & Misc',
+] as const;
+
+export const ALL_FINANCE_CATEGORIES = [
+  ...INCOME_CATEGORIES,
+  ...EXPENSE_CATEGORIES,
+] as const;
+
+export type IncomeCategory = (typeof INCOME_CATEGORIES)[number];
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+export type FinanceCategory = (typeof ALL_FINANCE_CATEGORIES)[number];
+
 export interface Category {
-  id: number;
   name: string;
   type: TransactionType;
-  applicableToFreq: TransactionFrequency;
-  icon?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Transaction {
@@ -19,8 +41,7 @@ export interface Transaction {
   frequency: TransactionFrequency;
   paymentFrequency?: PaymentFrequency;
   amount: number;
-  categoryId: number;
-  categoryName: string;
+  category: string;
   description?: string;
   date: string;
   createdAt: string;
@@ -37,8 +58,7 @@ export interface FixedTransaction {
   id: string;
   type: TransactionType;
   paymentFrequency: PaymentFrequency;
-  categoryId: number;
-  categoryName: string;
+  category: string;
   description?: string;
   totalPaid: number;
   payments?: PaymentSummary[];
@@ -60,7 +80,7 @@ export interface CreateTransactionRequest {
   frequency: TransactionFrequency;
   paymentFrequency?: PaymentFrequency;
   amount: number;
-  categoryId: number;
+  category: string;
   description?: string;
   date?: string;
 }
@@ -70,7 +90,7 @@ export interface UpdateTransactionRequest {
   frequency?: TransactionFrequency;
   paymentFrequency?: PaymentFrequency;
   amount?: number;
-  categoryId?: number;
+  category?: string;
   description?: string;
   date?: string;
 }
@@ -82,8 +102,7 @@ export interface CreatePaymentRequest {
 }
 
 export interface CategorySummary {
-  categoryId: number;
-  categoryName: string;
+  category: string;
   total: number;
   percentage: number;
   count: number;

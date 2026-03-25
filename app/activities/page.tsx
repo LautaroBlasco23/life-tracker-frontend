@@ -379,8 +379,8 @@ export default function ActivitiesPage() {
   const getPageDescription = (): string => {
     if (viewMode === 'today') return t('description');
     const parts: string[] = [];
-    if (activeFilter.frequency) parts.push(activeFilter.frequency);
-    if (activeFilter.dayTime) parts.push(activeFilter.dayTime);
+    if (activeFilter.frequency) parts.push(t(activeFilter.frequency));
+    if (activeFilter.dayTime) parts.push(t(activeFilter.dayTime));
     return parts.length > 0
       ? t('descriptionShowing', { parts: parts.join(', ') })
       : t('descriptionFiltered');
@@ -388,7 +388,7 @@ export default function ActivitiesPage() {
 
   const buildActivityBadges = (activity: Activity) => {
     const badges: Array<{ label: string; variant: 'outline' | 'default' }> = [
-      { label: activity.frequency, variant: 'outline' },
+      { label: t(activity.frequency), variant: 'outline' },
     ];
     const formattedDays = formatDayFrequency(activity.dayFrequency);
     if (activity.frequency === 'weekly' && formattedDays) {
@@ -506,10 +506,10 @@ export default function ActivitiesPage() {
               </span>
               <div className="flex flex-wrap gap-2">
                 {activeFilter.frequency && (
-                  <Badge variant="secondary">{activeFilter.frequency}</Badge>
+                  <Badge variant="secondary">{t(activeFilter.frequency)}</Badge>
                 )}
                 {activeFilter.dayTime && (
-                  <Badge variant="secondary">{activeFilter.dayTime}</Badge>
+                  <Badge variant="secondary">{t(activeFilter.dayTime)}</Badge>
                 )}
                 {activeFilter.scheduledFor && (
                   <Badge variant="secondary">
@@ -633,8 +633,9 @@ export default function ActivitiesPage() {
                                     </div>
                                   )}
                                   <div>
-                                    {activity.frequency} • {activity.dayTime} •
-                                    {t('target')} {activity.completionAmount}
+                                    {t(activity.frequency)} •{' '}
+                                    {t(activity.dayTime)} •{t('target')}{' '}
+                                    {activity.completionAmount}
                                   </div>
                                 </div>
                               </div>

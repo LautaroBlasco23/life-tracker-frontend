@@ -21,6 +21,7 @@ import {
 import { timeService } from '@/services/time-service';
 import { showToast } from '@/lib/toast';
 import { TIME_CATEGORIES, TimeRecord } from '@/types/time';
+import { useTranslations } from '@/contexts/language-context';
 
 interface EditTimeRecordModalProps {
   open: boolean;
@@ -41,6 +42,26 @@ export function EditTimeRecordModal({
   const [minutes, setMinutes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const t = useTranslations('time');
+  const tCommon = useTranslations('common');
+  const tTimeCategories = useTranslations('timeCategories');
+
+  const translateCategory = (cat: string) => {
+    const keyMap: Record<string, string> = {
+      reading: 'reading',
+      gaming: 'gaming',
+      exercise: 'exercise',
+      work: 'work',
+      study: 'study',
+      meditation: 'meditation',
+      hobbies: 'hobbies',
+      social: 'social',
+      entertainment: 'entertainment',
+      other: 'other',
+    };
+    return tTimeCategories(keyMap[cat.toLowerCase()] || 'other');
+  };
+
   useEffect(() => {
     if (record) {
       setCategory(record.category);
@@ -59,8 +80,9 @@ export function EditTimeRecordModal({
 
     if (totalMinutes <= 0) {
       showToast({
-        title: 'Invalid duration',
-        description: 'Please enter a valid duration.',
+        title: t('invalidDuration') || 'Invalid duration',
+        description:
+          t('enterValidDuration') || 'Please enter a valid duration.',
         variant: 'destructive',
       });
       return;
@@ -75,12 +97,13 @@ export function EditTimeRecordModal({
       });
       onRecordUpdated(updatedRecord);
       showToast({
-        title: 'Time updated',
-        description: 'Your time entry has been updated.',
+        title: t('timeUpdated') || 'Time updated',
+        description:
+          t('timeUpdatedDescription') || 'Your time entry has been updated.',
       });
     } catch (error) {
       showToast({
-        title: 'Failed to update',
+        title: tCommon('error'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -94,19 +117,19 @@ export function EditTimeRecordModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Time Entry</DialogTitle>
+          <DialogTitle>{t('editEntry') || 'Edit Time Entry'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-category">Category</Label>
+            <Label htmlFor="edit-category">{t('category')}</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={t('selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {TIME_CATEGORIES.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {cat}
+                    {translateCategory(cat)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -114,10 +137,10 @@ export function EditTimeRecordModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+            <Label htmlFor="edit-description">{t('description')}</Label>
             <Textarea
               id="edit-description"
-              placeholder="What did you do?"
+              placeholder={t('whatAreYouWorkingOn')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
@@ -126,7 +149,7 @@ export function EditTimeRecordModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Duration</Label>
+            <Label>{t('duration') || 'Duration'}</Label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <Input
@@ -138,7 +161,7 @@ export function EditTimeRecordModal({
                   onChange={(e) => setHours(e.target.value)}
                 />
                 <span className="text-xs text-muted-foreground mt-1 block">
-                  Hours
+                  {t('hours') || 'Hours'}
                 </span>
               </div>
               <span className="text-muted-foreground">:</span>
@@ -152,7 +175,7 @@ export function EditTimeRecordModal({
                   onChange={(e) => setMinutes(e.target.value)}
                 />
                 <span className="text-xs text-muted-foreground mt-1 block">
-                  Minutes
+                  {t('minutes') || 'Minutes'}
                 </span>
               </div>
             </div>
@@ -164,10 +187,10 @@ export function EditTimeRecordModal({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting || !category}>
-              {isSubmitting ? 'Updating...' : 'Update'}
+              {isSubmitting ? tCommon('updating') : tCommon('save')}
             </Button>
           </div>
         </form>

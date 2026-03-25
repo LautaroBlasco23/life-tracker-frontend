@@ -194,7 +194,7 @@ export function PaymentModal({
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-base">
-                  {transaction.categoryName}
+                  {transaction.category}
                 </CardTitle>
                 {transaction.description && (
                   <CardDescription className="mt-1">
@@ -203,7 +203,7 @@ export function PaymentModal({
                 )}
               </div>
               <Badge variant={isIncome ? 'default' : 'destructive'}>
-                {transaction.type}
+                {t(transaction.type)}
               </Badge>
             </div>
           </CardHeader>

@@ -29,6 +29,7 @@ import type {
   Category,
 } from '@/types';
 import { formatInputValue, parseInputValue } from '@/utils/formatNumbers';
+import { useTranslations } from '@/contexts/language-context';
 
 interface EditTransactionModalProps {
   open: boolean;
@@ -51,9 +52,14 @@ export function EditTransactionModal({
   const [frequency, setFrequency] = useState<TransactionFrequency>('variable');
   const [paymentFrequency, setPaymentFrequency] =
     useState<PaymentFrequency>('monthly');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const t = useTranslations('createTransaction');
+  const tCommon = useTranslations('common');
+  const tFinance = useTranslations('finance');
+  const tFinanceCategories = useTranslations('financeCategories');
 
   const isFixed = frequency === 'fixed';
 
@@ -68,7 +74,7 @@ export function EditTransactionModal({
       setType(transaction.type);
       setFrequency(transaction.frequency);
       setPaymentFrequency(transaction.paymentFrequency || 'monthly');
-      setCategoryId(transaction.categoryId);
+      setCategory(transaction.category);
       setDate(new Date(transaction.date).toISOString().split('T')[0]);
     }
   }, [transaction, open]);
@@ -79,28 +85,23 @@ export function EditTransactionModal({
     setType('outcome');
     setFrequency('variable');
     setPaymentFrequency('monthly');
-    setCategoryId(null);
+    setCategory(null);
     setDate('');
   };
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    if (categoryId) {
-      const currentCategory = categories.find((cat) => cat.id === categoryId);
+    if (category) {
+      const currentCategory = categories.find((cat) => cat.name === category);
       if (currentCategory?.type !== newType) {
-        setCategoryId(null);
+        setCategory(null);
       }
     }
   };
 
   const handleFrequencyChange = (newFrequency: TransactionFrequency) => {
     setFrequency(newFrequency);
-    if (categoryId) {
-      const currentCategory = categories.find((cat) => cat.id === categoryId);
-      if (currentCategory?.applicableToFreq !== newFrequency) {
-        setCategoryId(null);
-      }
-    }
+    setCategory(null);
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,10 +113,10 @@ export function EditTransactionModal({
     e.preventDefault();
     if (!transaction) return;
 
-    if (!categoryId) {
+    if (!category) {
       showToast({
-        title: 'Validation error',
-        description: 'Please select a category.',
+        title: t('validationError'),
+        description: t('selectCategoryError'),
         variant: 'destructive',
       });
       return;
@@ -128,8 +129,8 @@ export function EditTransactionModal({
 
       if (isNaN(amountValue) || amountValue <= 0) {
         showToast({
-          title: 'Validation error',
-          description: 'Please enter a valid amount greater than 0.',
+          title: t('validationError'),
+          description: t('invalidAmountError'),
           variant: 'destructive',
         });
         return;
@@ -145,8 +146,8 @@ export function EditTransactionModal({
           type,
           frequency,
           paymentFrequency: isFixed ? paymentFrequency : undefined,
-          amount: isFixed ? undefined : amountValue,
-          categoryId,
+          amount: amountValue,
+          category,
           description,
           date: new Date(date).toISOString(),
         }
@@ -154,13 +155,15 @@ export function EditTransactionModal({
 
       onTransactionUpdated(updatedTransaction);
       showToast({
-        title: 'Transaction updated',
-        description: 'Your transaction has been successfully updated.',
+        title: tFinance('transactionUpdated') || 'Transaction updated',
+        description:
+          tFinance('transactionUpdatedDescription') ||
+          'Your transaction has been successfully updated.',
       });
       onOpenChange(false);
     } catch (error) {
       showToast({
-        title: 'Update failed',
+        title: tCommon('error'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -179,25 +182,27 @@ export function EditTransactionModal({
 
   if (!transaction) return null;
 
-  const filteredCategories = categories.filter(
-    (cat) => cat.type === type && cat.applicableToFreq === frequency
-  );
+  const filteredCategories = categories.filter((cat) => cat.type === type);
+
+  const translateCategory = (catName: string) => {
+    return tFinanceCategories(catName);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Transaction</DialogTitle>
-          <DialogDescription>
-            Update your transaction details.
-          </DialogDescription>
+          <DialogTitle>
+            {tFinance('editTransaction') || 'Edit Transaction'}
+          </DialogTitle>
+          <DialogDescription>{t('descriptionNew')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+            <Label htmlFor="edit-description">{t('descriptionLabel')}</Label>
             <Textarea
               id="edit-description"
-              placeholder="Describe your transaction"
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-input border-border resize-none"
@@ -206,7 +211,7 @@ export function EditTransactionModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-type">Type</Label>
+            <Label htmlFor="edit-type">{t('type')}</Label>
             <Select
               value={type}
               onValueChange={(value: TransactionType) =>
@@ -217,14 +222,14 @@ export function EditTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="outcome">Expense</SelectItem>
+                <SelectItem value="income">{t('income')}</SelectItem>
+                <SelectItem value="outcome">{t('expense')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-frequency">Frequency</Label>
+            <Label htmlFor="edit-frequency">{t('frequency')}</Label>
             <Select
               value={frequency}
               onValueChange={(value: TransactionFrequency) =>
@@ -235,15 +240,17 @@ export function EditTransactionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed (Recurring)</SelectItem>
-                <SelectItem value="variable">Variable (One-time)</SelectItem>
+                <SelectItem value="fixed">{t('fixed')}</SelectItem>
+                <SelectItem value="variable">{t('variable')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {isFixed && (
             <div className="space-y-2">
-              <Label htmlFor="edit-paymentFrequency">Payment Frequency</Label>
+              <Label htmlFor="edit-paymentFrequency">
+                {t('paymentFrequency')}
+              </Label>
               <Select
                 value={paymentFrequency}
                 onValueChange={(value: PaymentFrequency) =>
@@ -254,9 +261,9 @@ export function EditTransactionModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="bimonthly">Bimonthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="monthly">{t('monthly')}</SelectItem>
+                  <SelectItem value="bimonthly">{t('bimonthly')}</SelectItem>
+                  <SelectItem value="yearly">{t('yearly')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -265,7 +272,7 @@ export function EditTransactionModal({
           {!isFixed && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-amount">Amount</Label>
+                <Label htmlFor="edit-amount">{t('amount')}</Label>
                 <Input
                   id="edit-amount"
                   type="text"
@@ -279,7 +286,7 @@ export function EditTransactionModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-date">Date</Label>
+                <Label htmlFor="edit-date">{t('date')}</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -293,18 +300,18 @@ export function EditTransactionModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="edit-category">Category</Label>
+            <Label htmlFor="edit-category">{t('category')}</Label>
             <Select
-              value={categoryId?.toString() || ''}
-              onValueChange={(value) => setCategoryId(Number(value))}
+              value={category || ''}
+              onValueChange={(value) => setCategory(value)}
             >
               <SelectTrigger className="bg-input border-border">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={t('selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id.toString()}>
-                    {cat.name}
+                  <SelectItem key={cat.name} value={cat.name}>
+                    {translateCategory(cat.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -318,10 +325,12 @@ export function EditTransactionModal({
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update Transaction'}
+              {isLoading
+                ? tCommon('updating')
+                : tFinance('updateTransaction') || 'Update Transaction'}
             </Button>
           </div>
         </form>

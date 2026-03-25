@@ -46,7 +46,7 @@ export interface TransactionFilter
   extends Record<string, string | number | undefined> {
   month?: number;
   year?: number;
-  categoryId?: number;
+  category?: string;
 }
 
 const TYPE_CONFIG = {
@@ -139,7 +139,7 @@ export default function FinancePage() {
           frequency: 'variable',
           month: activeFilter.month,
           year: activeFilter.year,
-          categoryId: activeFilter.categoryId,
+          category: activeFilter.category,
         }),
         financeService.getFixedTransactions({
           month: activeFilter.month,
@@ -204,7 +204,7 @@ export default function FinancePage() {
           frequency: 'variable',
           month: activeFilter.month,
           year: activeFilter.year,
-          categoryId: activeFilter.categoryId,
+          category: activeFilter.category,
         });
         setTransactions(userTransactions);
         setFixedTransactions([]);
@@ -322,8 +322,7 @@ export default function FinancePage() {
       frequency: 'fixed',
       paymentFrequency: fixedTransaction.paymentFrequency,
       amount: 0,
-      categoryId: fixedTransaction.categoryId,
-      categoryName: fixedTransaction.categoryName,
+      category: fixedTransaction.category,
       description: fixedTransaction.description,
       date: fixedTransaction.createdAt,
       createdAt: fixedTransaction.createdAt,
@@ -499,13 +498,8 @@ export default function FinancePage() {
                 {getFilterBadgeText() && (
                   <Badge variant="secondary">{getFilterBadgeText()}</Badge>
                 )}
-                {activeFilter.categoryId !== undefined && (
-                  <Badge variant="secondary">
-                    {
-                      categories.find((c) => c.id === activeFilter.categoryId)
-                        ?.name
-                    }
-                  </Badge>
+                {activeFilter.category !== undefined && (
+                  <Badge variant="secondary">{activeFilter.category}</Badge>
                 )}
                 <Button
                   variant="ghost"
@@ -752,7 +746,7 @@ export default function FinancePage() {
                         return (
                           <EntityCard
                             key={transaction.id}
-                            title={transaction.categoryName}
+                            title={transaction.category}
                             subtitle={transaction.description}
                             badges={[
                               {
@@ -786,12 +780,12 @@ export default function FinancePage() {
                             }
                             deleteModal={{
                               title: t('deleteTransaction'),
-                              itemName: transaction.categoryName,
+                              itemName: transaction.category,
                               confirmLabel: t('deleteTransaction'),
                               itemDetails: (
                                 <div className="text-sm">
                                   <div className="font-medium text-foreground mb-1">
-                                    {transaction.categoryName}
+                                    {transaction.category}
                                   </div>
                                   <div className="text-muted-foreground text-xs">
                                     {transaction.description && (

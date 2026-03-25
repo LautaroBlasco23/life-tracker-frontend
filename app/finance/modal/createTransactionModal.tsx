@@ -53,11 +53,13 @@ export function CreateTransactionModal({
     useState<TransactionFrequency>(defaultFrequency);
   const [paymentFrequency, setPaymentFrequency] =
     useState<PaymentFrequency>('monthly');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
+
   const t = useTranslations('createTransaction');
   const tCommon = useTranslations('common');
+  const tFinanceCategories = useTranslations('financeCategories');
 
   const isFixed = frequency === 'fixed';
 
@@ -67,18 +69,18 @@ export function CreateTransactionModal({
     setType('outcome');
     setFrequency(defaultFrequency);
     setPaymentFrequency('monthly');
-    setCategoryId(null);
+    setCategory(null);
     setDate(new Date().toISOString().split('T')[0]);
   };
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    setCategoryId(null);
+    setCategory(null);
   };
 
   const handleFrequencyChange = (newFrequency: TransactionFrequency) => {
     setFrequency(newFrequency);
-    setCategoryId(null);
+    setCategory(null);
     if (newFrequency === 'fixed') {
       setAmount('');
     }
@@ -92,7 +94,7 @@ export function CreateTransactionModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!categoryId) {
+    if (!category) {
       showToast({
         title: t('validationError'),
         description: t('selectCategoryError'),
@@ -102,7 +104,7 @@ export function CreateTransactionModal({
     }
 
     let amountValue = 0;
-    if (!isFixed) {
+    if (!isFixed && amount) {
       const numericAmount = parseInputValue(amount);
       amountValue = parseFloat(numericAmount);
 
@@ -124,7 +126,7 @@ export function CreateTransactionModal({
         frequency,
         paymentFrequency: isFixed ? paymentFrequency : undefined,
         amount: amountValue,
-        categoryId,
+        category,
         description,
         date: new Date(date).toISOString(),
       });
@@ -157,9 +159,11 @@ export function CreateTransactionModal({
     onOpenChange(newOpen);
   };
 
-  const filteredCategories = categories.filter(
-    (cat) => cat.type === type && cat.applicableToFreq === frequency
-  );
+  const filteredCategories = categories.filter((cat) => cat.type === type);
+
+  const translateCategory = (catName: string) => {
+    return tFinanceCategories(catName);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -276,16 +280,16 @@ export function CreateTransactionModal({
           <div className="space-y-2">
             <Label htmlFor="category">{t('category')}</Label>
             <Select
-              value={categoryId?.toString() || ''}
-              onValueChange={(value) => setCategoryId(Number(value))}
+              value={category || ''}
+              onValueChange={(value) => setCategory(value)}
             >
               <SelectTrigger className="bg-input border-border">
                 <SelectValue placeholder={t('selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id.toString()}>
-                    {cat.name}
+                  <SelectItem key={cat.name} value={cat.name}>
+                    {translateCategory(cat.name)}
                   </SelectItem>
                 ))}
               </SelectContent>

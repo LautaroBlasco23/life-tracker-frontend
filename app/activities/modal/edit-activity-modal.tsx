@@ -25,6 +25,7 @@ import {
 import { activityService } from '@/services/activity-service';
 import type { Activity, Frequency, DayOfWeek, DayTime } from '@/types/activity';
 import { showToast } from '@/lib/toast';
+import { useTranslations } from '@/contexts/language-context';
 
 interface EditActivityModalProps {
   open: boolean;
@@ -32,23 +33,6 @@ interface EditActivityModalProps {
   activity: Activity | null;
   onActivityUpdated: (activity: Activity) => void;
 }
-
-const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
-
-const CATEGORIES: { value: DayTime; label: string }[] = [
-  { value: 'notSpecified', label: 'Any Moment' },
-  { value: 'morning', label: 'Morning' },
-  { value: 'afternoon', label: 'Afternoon' },
-  { value: 'evening', label: 'Evening' },
-];
 
 export function EditActivityModal({
   open,
@@ -64,6 +48,10 @@ export function EditActivityModal({
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const t = useTranslations('activities');
+  const tCreate = useTranslations('createActivity');
+  const tCommon = useTranslations('common');
+
   useEffect(() => {
     if (activity && open) {
       setTitle(activity.title);
@@ -72,7 +60,6 @@ export function EditActivityModal({
       setFrequency(activity.frequency);
       setDayTime(activity.dayTime);
 
-      // Parse day frequency if it exists
       if (activity.dayFrequency) {
         try {
           const days: DayOfWeek[] = JSON.parse(activity.dayFrequency);
@@ -101,8 +88,8 @@ export function EditActivityModal({
 
     if (frequency === 'weekly' && selectedDays.length === 0) {
       showToast({
-        title: 'Validation error',
-        description: 'Please select at least one day for weekly activities.',
+        title: t('validationError') || tCreate('validationError'),
+        description: tCreate('selectDayError'),
         variant: 'destructive',
       });
       return;
@@ -125,13 +112,15 @@ export function EditActivityModal({
 
       onActivityUpdated(updatedActivity);
       showToast({
-        title: 'Activity updated',
-        description: 'Your activity has been successfully updated.',
+        title: t('activityUpdated') || 'Activity updated',
+        description:
+          t('activityUpdatedDescription') ||
+          'Your activity has been successfully updated.',
       });
       onOpenChange(false);
     } catch (error) {
       showToast({
-        title: 'Update failed',
+        title: tCommon('error'),
         description:
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
@@ -158,22 +147,37 @@ export function EditActivityModal({
 
   if (!activity) return null;
 
+  const DAYS_OF_WEEK = [
+    { value: 'monday' as DayOfWeek, label: tCreate('monday') },
+    { value: 'tuesday' as DayOfWeek, label: tCreate('tuesday') },
+    { value: 'wednesday' as DayOfWeek, label: tCreate('wednesday') },
+    { value: 'thursday' as DayOfWeek, label: tCreate('thursday') },
+    { value: 'friday' as DayOfWeek, label: tCreate('friday') },
+    { value: 'saturday' as DayOfWeek, label: tCreate('saturday') },
+    { value: 'sunday' as DayOfWeek, label: tCreate('sunday') },
+  ];
+
+  const DAY_TIME_CATEGORIES = [
+    { value: 'notSpecified' as DayTime, label: t('anyMoment') },
+    { value: 'morning' as DayTime, label: t('morning') },
+    { value: 'afternoon' as DayTime, label: t('afternoon') },
+    { value: 'evening' as DayTime, label: t('evening') },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Activity</DialogTitle>
-          <DialogDescription>
-            Update your activity details and preferences.
-          </DialogDescription>
+          <DialogTitle>{t('editActivity') || 'Edit Activity'}</DialogTitle>
+          <DialogDescription>{tCreate('description')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Title</Label>
+            <Label htmlFor="edit-title">{tCreate('titleLabel')}</Label>
             <Input
               id="edit-title"
               type="text"
-              placeholder="e.g., Morning Workout"
+              placeholder={tCreate('titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -182,10 +186,12 @@ export function EditActivityModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+            <Label htmlFor="edit-description">
+              {tCreate('descriptionLabel')}
+            </Label>
             <Textarea
               id="edit-description"
-              placeholder="Describe your activity (optional)"
+              placeholder={tCreate('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-input border-border resize-none"
@@ -195,7 +201,9 @@ export function EditActivityModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-completionAmount">Target Amount</Label>
+              <Label htmlFor="edit-completionAmount">
+                {tCreate('targetAmount')}
+              </Label>
               <Input
                 id="edit-completionAmount"
                 type="number"
@@ -208,7 +216,7 @@ export function EditActivityModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-category">Category</Label>
+              <Label htmlFor="edit-category">{t('timeOfDay')}</Label>
               <Select
                 value={dayTime}
                 onValueChange={(value: DayTime) => setDayTime(value)}
@@ -217,7 +225,7 @@ export function EditActivityModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {DAY_TIME_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>
@@ -228,7 +236,7 @@ export function EditActivityModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-frequency">Frequency</Label>
+            <Label htmlFor="edit-frequency">{t('frequency')}</Label>
             <Select
               value={frequency}
               onValueChange={(value: Frequency) => setFrequency(value)}
@@ -237,17 +245,17 @@ export function EditActivityModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="oneTime">One Time</SelectItem>
+                <SelectItem value="daily">{t('daily')}</SelectItem>
+                <SelectItem value="weekly">{t('weekly')}</SelectItem>
+                <SelectItem value="monthly">{t('monthly')}</SelectItem>
+                <SelectItem value="oneTime">{t('oneTime')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {frequency === 'weekly' && (
             <div className="space-y-2">
-              <Label>Days of the week</Label>
+              <Label>{tCreate('daysOfWeek')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {DAYS_OF_WEEK.map((day) => (
                   <div key={day.value} className="flex items-center space-x-2">
@@ -277,10 +285,12 @@ export function EditActivityModal({
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update Activity'}
+              {isLoading
+                ? tCommon('updating')
+                : t('updateActivity') || 'Update Activity'}
             </Button>
           </div>
         </form>
