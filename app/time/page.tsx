@@ -603,7 +603,7 @@ export default function TimePage() {
             onValueChange={handleTimePeriodChange}
             className="mb-6"
           >
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="flex flex-wrap w-full gap-1">
               <TabsTrigger value="thisWeek">{t('thisWeek')}</TabsTrigger>
               <TabsTrigger value="thisMonth">{t('thisMonth')}</TabsTrigger>
               <TabsTrigger value="lastMonth">{t('lastMonth')}</TabsTrigger>
