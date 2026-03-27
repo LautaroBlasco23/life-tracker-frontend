@@ -6,7 +6,7 @@ import { Playfair_Display } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { LanguageProvider } from '@/contexts/language-context';
-import { Toaster } from 'react-hot-toast';
+import { ToastProvider } from '@/lib/toast';
 import { Suspense } from 'react';
 import './globals.css';
 
@@ -45,7 +45,7 @@ export default function RootLayout({
           <LanguageProvider>
             <ThemeProvider>
               {children}
-              <Toaster position="bottom-center" />
+              <ToastProvider />
             </ThemeProvider>
           </LanguageProvider>
         </Suspense>
