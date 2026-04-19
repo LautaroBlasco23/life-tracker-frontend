@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { noteService } from '@/services/note-service';
 import type { Note } from '@/types/note';
 import { Plus, Search, FileText, Trash2, Save, ArrowLeft } from 'lucide-react';
@@ -256,14 +255,13 @@ export default function NotesPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
         <Navigation />
-        <div className="h-[calc(100vh-5rem)] flex flex-col">
+        <div className="h-[calc(100vh-4rem)] lg:h-screen flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h1 className="text-2xl font-semibold text-foreground">
               {t('title')}
             </h1>
-            <ThemeToggle />
           </div>
 
           <div className="flex flex-1 overflow-hidden flex-col md:flex-row">

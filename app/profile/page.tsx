@@ -16,7 +16,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { authService } from '@/services/auth-service';
 import { userService } from '@/services/user-service';
 import type { User } from '@/types/user';
@@ -140,8 +139,11 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-muted-foreground">{t('loading')}</div>
+        <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
+          <Navigation />
+          <div className="flex items-center justify-center h-[calc(100vh-4rem)] lg:h-screen">
+            <div className="text-muted-foreground">{t('loading')}</div>
+          </div>
         </div>
       </AuthGuard>
     );
@@ -149,7 +151,7 @@ export default function ProfilePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
         <Navigation />
         <div className="max-w-2xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
@@ -159,7 +161,6 @@ export default function ProfilePage() {
               </h1>
               <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <ThemeToggle />
           </div>
           <div className="space-y-6">
             <Card className="bg-muted/30">

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { timeService } from '@/services/time-service';
 import type { TimeRecord } from '@/types/time';
 import {
@@ -533,7 +532,6 @@ export default function TimePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
@@ -574,7 +572,6 @@ export default function TimePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <Button
                 variant="outline"
                 onClick={() => setShowFilterModal(true)}
