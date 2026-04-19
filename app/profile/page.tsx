@@ -18,8 +18,8 @@ import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { authService } from '@/services/auth-service';
 import { userService } from '@/services/user-service';
-import type { User } from '@/types/user';
-import { LogOut, KeyRound, Mail, Languages } from 'lucide-react';
+import type { User, ProfilePrivacyStatus } from '@/types/user';
+import { LogOut, KeyRound, Mail, Languages, AtSign, Lock } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { UpdatePasswordModal } from './modals/update-password-modal';
 import { UpdateEmailModal } from './modals/update-email-modal';
@@ -38,12 +38,16 @@ import {
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
+  const tPrivacy = useTranslations('privacy');
   const { locale, setLocale } = useLanguage();
 
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [profilePrivacyStatus, setProfilePrivacyStatus] =
+    useState<ProfilePrivacyStatus>('public');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -57,12 +61,16 @@ export default function ProfilePage() {
         setUser(profile);
         setFirstName(profile.firstName);
         setLastName(profile.lastName);
+        setUsername(profile.username || '');
+        setProfilePrivacyStatus(profile.profilePrivacyStatus || 'public');
       } catch {
         const cachedUser = authService.getCurrentUser();
         if (cachedUser) {
           setUser(cachedUser);
           setFirstName(cachedUser.firstName);
           setLastName(cachedUser.lastName);
+          setUsername(cachedUser.username || '');
+          setProfilePrivacyStatus(cachedUser.profilePrivacyStatus || 'public');
         }
       } finally {
         setIsLoading(false);
@@ -77,11 +85,30 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const updatedUser = await userService.updateUser({
+      const updates: {
+        firstName: string;
+        lastName: string;
+        username?: string;
+        profilePrivacyStatus?: ProfilePrivacyStatus;
+      } = {
         firstName,
         lastName,
-      });
+      };
+
+      // Only include username if it has changed and is not empty
+      if (username && username !== user.username) {
+        updates.username = username.toLowerCase().trim();
+      }
+
+      // Only include profilePrivacyStatus if it has changed
+      if (profilePrivacyStatus !== user.profilePrivacyStatus) {
+        updates.profilePrivacyStatus = profilePrivacyStatus;
+      }
+
+      const updatedUser = await userService.updateUser(updates);
       setUser(updatedUser);
+      setUsername(updatedUser.username || '');
+      setProfilePrivacyStatus(updatedUser.profilePrivacyStatus || 'public');
       showToast({
         title: t('profileUpdated'),
         description: t('profileUpdatedDescription'),
@@ -244,6 +271,62 @@ export default function ProfilePage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       {t('emailChangeHint')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="username"
+                      className="flex items-center gap-2"
+                    >
+                      <AtSign className="h-4 w-4" />
+                      {t('username')}
+                    </Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      value={username}
+                      onChange={(e) =>
+                        setUsername(
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9_]/g, '')
+                        )
+                      }
+                      placeholder={t('usernamePlaceholder')}
+                      className="bg-input border-border"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('usernameHint')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="profilePrivacy"
+                      className="flex items-center gap-2"
+                    >
+                      <Lock className="h-4 w-4" />
+                      {tPrivacy('profilePrivacy')}
+                    </Label>
+                    <Select
+                      value={profilePrivacyStatus}
+                      onValueChange={(value) =>
+                        setProfilePrivacyStatus(value as ProfilePrivacyStatus)
+                      }
+                    >
+                      <SelectTrigger className="bg-input border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">
+                          {tPrivacy('public')}
+                        </SelectItem>
+                        <SelectItem value="private">
+                          {tPrivacy('private')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {tPrivacy('profilePrivacyDescription')}
                     </p>
                   </div>
                   <Button type="submit" disabled={isSaving}>

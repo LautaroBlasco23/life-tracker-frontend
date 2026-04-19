@@ -10,6 +10,7 @@ export type DayOfWeek =
   | 'saturday'
   | 'sunday';
 export type DayTime = 'notSpecified' | 'morning' | 'afternoon' | 'evening';
+export type PrivacyStatus = 'public' | 'private';
 
 export interface StreakInfo {
   current: number;
@@ -26,6 +27,7 @@ export interface Activity {
   dayFrequency?: string;
   dayTime: DayTime;
   isActive: boolean;
+  privacyStatus?: PrivacyStatus;
   createdAt: string;
   updatedAt: string;
   todayCompletions: number;
@@ -40,6 +42,7 @@ export interface CreateActivityRequest {
   frequency: Frequency;
   dayFrequency?: DayOfWeek[];
   dayTime: DayTime;
+  privacyStatus?: PrivacyStatus;
 }
 
 export interface UpdateActivityRequest {
@@ -50,4 +53,5 @@ export interface UpdateActivityRequest {
   dayFrequency?: DayOfWeek[];
   dayTime?: DayTime;
   isActive?: boolean;
+  privacyStatus?: PrivacyStatus;
 }

@@ -23,7 +23,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { activityService } from '@/services/activity-service';
-import type { Activity, Frequency, DayOfWeek, DayTime } from '@/types/activity';
+import type {
+  Activity,
+  Frequency,
+  DayOfWeek,
+  DayTime,
+  PrivacyStatus,
+} from '@/types/activity';
 import { showToast } from '@/lib/toast';
 import { useTranslations } from '@/contexts/language-context';
 
@@ -44,9 +50,11 @@ export function CreateActivityModal({
   const [frequency, setFrequency] = useState<Frequency>('daily');
   const [dayTime, setDayTime] = useState<DayTime>('notSpecified');
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
+  const [privacyStatus, setPrivacyStatus] = useState<PrivacyStatus>('private');
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations('createActivity');
   const tCommon = useTranslations('common');
+  const tPrivacy = useTranslations('privacy');
 
   const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
     { value: 'monday', label: t('monday') },
@@ -79,6 +87,7 @@ export function CreateActivityModal({
     setFrequency('daily');
     setDayTime('morning');
     setSelectedDays([]);
+    setPrivacyStatus('private');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,6 +112,7 @@ export function CreateActivityModal({
         frequency,
         dayTime,
         dayFrequency: frequency === 'weekly' ? selectedDays : undefined,
+        privacyStatus,
       });
 
       onActivityCreated(newActivity);
@@ -246,6 +256,25 @@ export function CreateActivityModal({
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="privacyStatus">{tPrivacy('privacyStatus')}</Label>
+            <Select
+              value={privacyStatus}
+              onValueChange={(value: PrivacyStatus) => setPrivacyStatus(value)}
+            >
+              <SelectTrigger className="bg-input border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="private">{tPrivacy('private')}</SelectItem>
+                <SelectItem value="public">{tPrivacy('public')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {tPrivacy('activityPrivacyDescription')}
+            </p>
+          </div>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button

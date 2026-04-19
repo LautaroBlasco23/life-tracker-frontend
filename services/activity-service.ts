@@ -18,6 +18,7 @@ interface CreateActivityPayload {
   frequency: string;
   dayFrequency?: string;
   dayTime: string;
+  privacyStatus?: string;
 }
 
 interface UpdateActivityPayload {
@@ -28,6 +29,7 @@ interface UpdateActivityPayload {
   dayFrequency?: string;
   dayTime?: string;
   isActive?: boolean;
+  privacyStatus?: string;
 }
 
 interface BackendListResponse<T> {
@@ -116,6 +118,7 @@ class ActivityService {
         ? JSON.stringify(activityData.dayFrequency)
         : undefined,
       dayTime: activityData.dayTime,
+      privacyStatus: activityData.privacyStatus,
     };
 
     const response = await authService.makeAuthenticatedRequest(
@@ -145,6 +148,7 @@ class ActivityService {
         ? JSON.stringify(updates.dayFrequency)
         : undefined,
       dayTime: updates.dayTime,
+      privacyStatus: updates.privacyStatus,
     };
 
     const response = await authService.makeAuthenticatedRequest(

@@ -1,12 +1,6 @@
-import type { User } from '@/types/user';
+import type { User, UpdateUserRequest } from '@/types/user';
 import { authService } from './auth-service';
 import { getConfig } from '@/lib/config';
-
-interface UpdateUserRequest {
-  firstName?: string;
-  lastName?: string;
-  timezone?: string;
-}
 
 interface ApiResponse<T> {
   message: string;

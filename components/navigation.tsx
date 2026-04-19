@@ -11,6 +11,7 @@ import {
   StickyNote,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 import { useTranslations } from '@/contexts/language-context';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -28,6 +29,7 @@ export function Navigation() {
     { href: '/time', icon: Clock, label: t('time') },
     { href: '/notes', icon: StickyNote, label: t('notes') },
     { href: '/finance', icon: Wallet, label: t('finance') },
+    { href: '/social', icon: Users, label: t('social') },
     { href: '/profile', icon: User, label: t('profile') },
   ];
 
