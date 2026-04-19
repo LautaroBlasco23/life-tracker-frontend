@@ -36,6 +36,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,7 +75,13 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await authService.register({ firstName, lastName, email, password });
+      await authService.register({
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
       showToast({
         title: t('accountCreated'),
         description: t('accountCreatedDescription'),
@@ -146,6 +153,25 @@ export default function RegisterPage() {
                   className="bg-input border-border"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">{t('username')}</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder={t('usernamePlaceholder')}
+                value={username}
+                onChange={(e) =>
+                  setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))
+                }
+                required
+                className="bg-input border-border"
+                pattern="[a-z0-9_]+"
+                title="Username can only contain lowercase letters, numbers, and underscores"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('usernameHelp')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">{t('email')}</Label>
