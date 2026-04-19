@@ -1,0 +1,20 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  notify-infra:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify infra repo to redeploy
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT }}
+          repository: LautaroBlasco23/life-tracker-infra
+          event-type: redeploy
+          client-payload: '{"source": "frontend", "sha": "${{ github.sha }}"}'
