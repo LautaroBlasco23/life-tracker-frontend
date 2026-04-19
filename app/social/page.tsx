@@ -44,9 +44,10 @@ export default function SocialPage() {
     try {
       setIsLoadingPending(true);
       const requests = await socialService.getPendingFollowRequests();
-      setPendingRequests(requests);
+      setPendingRequests(requests || []);
     } catch (error) {
       console.error('Failed to load pending requests:', error);
+      setPendingRequests([]);
     } finally {
       setIsLoadingPending(false);
     }
@@ -324,9 +325,9 @@ export default function SocialPage() {
               <TabsTrigger value="requests" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 {t('requests')}
-                {pendingRequests.length > 0 && (
+                {pendingRequests?.length > 0 && (
                   <Badge variant="default" className="ml-1">
-                    {pendingRequests.length}
+                    {pendingRequests?.length || 0}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -384,10 +385,12 @@ export default function SocialPage() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : pendingRequests.length > 0 ? (
+              ) : pendingRequests?.length > 0 ? (
                 <div className="space-y-3">
                   <h2 className="text-sm font-medium text-muted-foreground">
-                    {t('pendingRequests', { count: pendingRequests.length })}
+                    {t('pendingRequests', {
+                      count: pendingRequests?.length || 0,
+                    })}
                   </h2>
                   {pendingRequests.map((request) => (
                     <Card key={request.followerId} className="bg-muted/30">
