@@ -61,7 +61,9 @@
     "passwordTooShortDescription": "La contraseña debe tener al menos {min} caracteres.",
     "accountCreated": "Cuenta creada",
     "accountCreatedDescription": "Tu cuenta fue creada correctamente.",
-    "registrationFailed": "Error al registrarse"
+    "registrationFailed": "Error al registrarse",
+    "english": "Inglés",
+    "spanish": "Español"
   },
   "activities": {
     "title": "Actividades de hoy",
@@ -378,7 +380,11 @@
     "uploadFailed": "Error al subir",
     "signedOut": "Sesión cerrada",
     "signedOutDescription": "Cerraste sesión correctamente.",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar idioma",
+    "english": "Inglés",
+    "spanish": "Español"
   },
   "updatePassword": {
     "title": "Actualizar contraseña",

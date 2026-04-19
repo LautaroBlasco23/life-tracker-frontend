@@ -20,14 +20,26 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { authService } from '@/services/auth-service';
 import { userService } from '@/services/user-service';
 import type { User } from '@/types/user';
-import { LogOut, KeyRound, Mail } from 'lucide-react';
+import { LogOut, KeyRound, Mail, Languages } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { UpdatePasswordModal } from './modals/update-password-modal';
 import { UpdateEmailModal } from './modals/update-email-modal';
-import { useTranslations } from '@/contexts/language-context';
+import {
+  useTranslations,
+  useLanguage,
+  type Locale,
+} from '@/contexts/language-context';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
+  const { locale, setLocale } = useLanguage();
 
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -265,6 +277,26 @@ export default function ProfilePage() {
                         ? new Date(user.updatedAt).toLocaleDateString()
                         : 'N/A'}
                     </p>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-border">
+                  <div className="space-y-2 mb-4">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      {t('language')}
+                    </Label>
+                    <Select
+                      value={locale}
+                      onValueChange={(value) => setLocale(value as Locale)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <Languages className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <SelectValue placeholder={t('selectLanguage')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">{t('english')}</SelectItem>
+                        <SelectItem value="es">{t('spanish')}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border space-y-3">

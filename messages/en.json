@@ -61,7 +61,9 @@
     "passwordTooShortDescription": "Password must be at least {min} characters long.",
     "accountCreated": "Account created",
     "accountCreatedDescription": "Your account has been created successfully.",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "english": "English",
+    "spanish": "Spanish"
   },
   "activities": {
     "title": "Today's Activities",
@@ -378,7 +380,11 @@
     "uploadFailed": "Upload failed",
     "signedOut": "Signed out",
     "signedOutDescription": "You have been successfully signed out.",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "english": "English",
+    "spanish": "Spanish"
   },
   "updatePassword": {
     "title": "Update Password",

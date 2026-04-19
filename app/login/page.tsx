@@ -17,7 +17,19 @@ import {
 } from '@/components/ui/card';
 import { authService } from '@/services/auth-service';
 import { showToast } from '@/lib/toast';
-import { useTranslations } from '@/contexts/language-context';
+import {
+  useTranslations,
+  useLanguage,
+  type Locale,
+} from '@/contexts/language-context';
+import { Languages } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,6 +37,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const t = useTranslations('auth');
+  const { locale, setLocale } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +66,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="flex justify-end mb-2">
+            <Select
+              value={locale}
+              onValueChange={(value) => setLocale(value as Locale)}
+            >
+              <SelectTrigger className="w-[140px]" size="sm">
+                <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">{t('english')}</SelectItem>
+                <SelectItem value="es">{t('spanish')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <CardTitle className="text-2xl font-semibold text-center">
             {t('signIn')}
           </CardTitle>

@@ -17,7 +17,19 @@ import {
 } from '@/components/ui/card';
 import { authService } from '@/services/auth-service';
 import { showToast } from '@/lib/toast';
-import { useTranslations } from '@/contexts/language-context';
+import {
+  useTranslations,
+  useLanguage,
+  type Locale,
+} from '@/contexts/language-context';
+import { Languages } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -31,6 +43,7 @@ export default function RegisterPage() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const router = useRouter();
   const t = useTranslations('auth');
+  const { locale, setLocale } = useLanguage();
 
   const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
   const showPasswordError = passwordTouched && !isPasswordValid;
@@ -84,6 +97,21 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="flex justify-end mb-2">
+            <Select
+              value={locale}
+              onValueChange={(value) => setLocale(value as Locale)}
+            >
+              <SelectTrigger className="w-[140px]" size="sm">
+                <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">{t('english')}</SelectItem>
+                <SelectItem value="es">{t('spanish')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <CardTitle className="text-2xl font-semibold text-center">
             {t('createAccount')}
           </CardTitle>

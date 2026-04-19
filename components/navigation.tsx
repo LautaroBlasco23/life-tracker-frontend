@@ -11,14 +11,12 @@ import {
   StickyNote,
   Menu,
   X,
-  Languages,
 } from 'lucide-react';
-import { useLanguage, useTranslations } from '@/contexts/language-context';
+import { useTranslations } from '@/contexts/language-context';
 
 export function Navigation() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { locale, setLocale } = useLanguage();
   const t = useTranslations('nav');
 
   const toggleMenu = useCallback(() => setIsOpen((prev) => !prev), []);
@@ -31,8 +29,6 @@ export function Navigation() {
     { href: '/finance', icon: Wallet, label: t('finance') },
     { href: '/profile', icon: User, label: t('profile') },
   ];
-
-  const toggleLocale = () => setLocale(locale === 'en' ? 'es' : 'en');
 
   return (
     <>
@@ -56,27 +52,17 @@ export function Navigation() {
             LifeTracker
           </Link>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleLocale}
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors text-xs font-semibold"
-              aria-label="Toggle language"
-            >
-              <Languages className="h-4 w-4" />
-            </button>
-            <Link
-              href="/profile"
-              className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                pathname === '/profile'
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/10'
-              }`}
-              aria-label={t('profile')}
-            >
-              <User className="h-5 w-5" />
-            </Link>
-          </div>
+          <Link
+            href="/profile"
+            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+              pathname === '/profile'
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/10'
+            }`}
+            aria-label={t('profile')}
+          >
+            <User className="h-5 w-5" />
+          </Link>
         </div>
       </header>
 
@@ -147,15 +133,6 @@ export function Navigation() {
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={toggleLocale}
-            className="flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-            aria-label="Toggle language"
-          >
-            <Languages className="h-5 w-5" />
-            <span className="text-xs font-medium uppercase">{locale}</span>
-          </button>
         </div>
       </nav>
     </>
