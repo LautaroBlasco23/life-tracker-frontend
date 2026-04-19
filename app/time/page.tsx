@@ -26,7 +26,7 @@ import { CategoryHeader } from '@/components/ui/category/categoryHeader';
 import { EntityCard } from '@/components/ui/card/entityCard';
 import { Badge } from '@/components/ui/badge';
 import { TIME_CATEGORIES } from '@/types/time';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -506,8 +506,11 @@ export default function TimePage() {
   if (isLoading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-muted-foreground">{tCommon('loading')}</div>
+        <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
+          <Navigation />
+          <div className="flex items-center justify-center h-[calc(100vh-4rem)] lg:h-screen">
+            <div className="text-muted-foreground">{tCommon('loading')}</div>
+          </div>
         </div>
       </AuthGuard>
     );
@@ -515,7 +518,7 @@ export default function TimePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pl-64">
         <Navigation />
         <div className="max-w-4xl mx-auto p-4 md:p-6">
           <div className="flex flex-col gap-4 mb-8 md:hidden">
@@ -598,18 +601,19 @@ export default function TimePage() {
             </div>
           </div>
 
-          <Tabs
-            value={timePeriod}
-            onValueChange={handleTimePeriodChange}
-            className="mb-6"
-          >
-            <TabsList className="flex flex-wrap w-full gap-1">
-              <TabsTrigger value="thisWeek">{t('thisWeek')}</TabsTrigger>
-              <TabsTrigger value="thisMonth">{t('thisMonth')}</TabsTrigger>
-              <TabsTrigger value="lastMonth">{t('lastMonth')}</TabsTrigger>
-              <TabsTrigger value="allTime">{t('allTime')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="mb-6">
+            <Select value={timePeriod} onValueChange={handleTimePeriodChange}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder={t('selectPeriod')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="thisWeek">{t('thisWeek')}</SelectItem>
+                <SelectItem value="thisMonth">{t('thisMonth')}</SelectItem>
+                <SelectItem value="lastMonth">{t('lastMonth')}</SelectItem>
+                <SelectItem value="allTime">{t('allTime')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {filterCount > 0 && (
             <div className="mb-6 flex items-center gap-2 flex-wrap">
