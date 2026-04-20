@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { authService } from '@/services/auth-service';
+import { userService } from '@/services/user-service';
 import { showToast } from '@/lib/toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check, X } from 'lucide-react';
 import type { User } from '@/types/user';
 import { useTranslations } from '@/contexts/language-context';
 
@@ -35,6 +36,13 @@ export function UpdateEmailModal({
   const [newEmail, setNewEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Email availability check state
+  const [emailStatus, setEmailStatus] = useState<
+    'available' | 'taken' | 'checking' | null
+  >(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
   const t = useTranslations('updateEmail');
   const tCommon = useTranslations('common');
 
@@ -42,6 +50,8 @@ export function UpdateEmailModal({
     setPassword('');
     setNewEmail('');
     setShowPassword(false);
+    setEmailStatus(null);
+    setEmailError(null);
   };
 
   const handleClose = (open: boolean) => {
@@ -50,6 +60,47 @@ export function UpdateEmailModal({
     }
     onOpenChange(open);
   };
+
+  // Debounced email availability check
+  const checkEmail = useCallback(
+    async (value: string) => {
+      // Basic email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!value || !emailRegex.test(value) || value === currentEmail) {
+        setEmailStatus(null);
+        setEmailError(null);
+        return;
+      }
+
+      setEmailStatus('checking');
+      setEmailError(null);
+
+      try {
+        const isAvailable = await userService.checkEmailAvailability(value);
+        if (isAvailable) {
+          setEmailStatus('available');
+        } else {
+          setEmailStatus('taken');
+          setEmailError(t('emailTaken') || 'Email is already registered');
+        }
+      } catch (error) {
+        setEmailStatus(null);
+        setEmailError(null);
+      }
+    },
+    [currentEmail, t]
+  );
+
+  // Debounced effect for email check
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (newEmail) {
+        checkEmail(newEmail);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [newEmail, checkEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,14 +163,38 @@ export function UpdateEmailModal({
           </div>
           <div className="space-y-2">
             <Label htmlFor="new-email">{t('newEmail')}</Label>
-            <Input
-              id="new-email"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder={t('newEmailPlaceholder')}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={t('newEmailPlaceholder')}
+                required
+                className={`pr-10 transition-colors ${
+                  emailStatus === 'available'
+                    ? 'border-green-500 focus-visible:ring-green-500'
+                    : emailStatus === 'taken'
+                      ? 'border-red-500 focus-visible:ring-red-500'
+                      : ''
+                }`}
+              />
+              {emailStatus === 'available' && (
+                <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+              )}
+              {emailStatus === 'taken' && (
+                <X className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
+              )}
+              {emailStatus === 'checking' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+              )}
+            </div>
+            {emailStatus === 'available' && (
+              <p className="text-xs text-green-600">
+                {t('emailAvailable') || 'Email is available'}
+              </p>
+            )}
+            {emailError && <p className="text-xs text-red-600">{emailError}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email-password">{t('password')}</Label>
