@@ -44,6 +44,8 @@
     "noAccount": "¿No tenés cuenta?",
     "haveAccount": "¿Ya tenés una cuenta?",
     "signInDescription": "Ingresá tus credenciales para acceder a tu cuenta",
+    "usernameOrEmail": "Usuario o Correo",
+    "usernameOrEmailPlaceholder": "Ingresá tu usuario o correo",
     "createAccountDescription": "Ingresá tu información para crear tu cuenta",
     "firstName": "Nombre",
     "firstNamePlaceholder": "Juan",

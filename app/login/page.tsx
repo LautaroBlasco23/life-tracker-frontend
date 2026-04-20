@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await authService.login({ email, password });
+      await authService.login({ identifier, password });
       showToast({
         title: t('welcomeBack'),
         description: t('welcomeBackDescription'),
@@ -91,13 +91,13 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
+              <Label htmlFor="identifier">{t('usernameOrEmail')}</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder={t('usernameOrEmailPlaceholder')}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="bg-input border-border"
               />

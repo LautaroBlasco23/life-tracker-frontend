@@ -44,6 +44,8 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
     "signInDescription": "Enter your credentials to access your account",
+    "usernameOrEmail": "Username or Email",
+    "usernameOrEmailPlaceholder": "Enter your username or email",
     "createAccountDescription": "Enter your information to create your account",
     "firstName": "First name",
     "firstNamePlaceholder": "John",
