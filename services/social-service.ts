@@ -23,6 +23,12 @@ interface PageResponse<T> {
   offset: number;
 }
 
+// API returns a different structure for user search
+interface UserSearchResponse {
+  count: number;
+  data: PublicUserCard[];
+}
+
 class SocialService {
   private get baseUrl(): string {
     return getConfig().apiUrl;
@@ -43,9 +49,8 @@ class SocialService {
     if (!response.ok) {
       throw new Error('Failed to search users');
     }
-    const result: ApiResponse<PageResponse<PublicUserCard>> =
-      await response.json();
-    return result.data.items;
+    const result: UserSearchResponse = await response.json();
+    return result.data ?? [];
   }
 
   // Get public profile by username

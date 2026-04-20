@@ -177,6 +177,11 @@ export default function ProfilePage() {
                 {t('title')}
               </h1>
               <p className="text-muted-foreground">{t('description')}</p>
+              {user?.username && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  @{user.username}
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-6">
@@ -249,6 +254,19 @@ export default function ProfilePage() {
                         required
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">{t('username')}</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      value={user?.username ?? ''}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('usernameHint')}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">{t('email')}</Label>
