@@ -64,7 +64,7 @@ export default function SocialPage() {
       setIsSearching(true);
       try {
         const results = await socialService.searchUsers(query, 20);
-        setSearchResults(results);
+        setSearchResults(results ?? []);
       } catch (error) {
         showToast({
           title: t('searchFailed'),
