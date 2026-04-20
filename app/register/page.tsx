@@ -75,7 +75,7 @@ export default function RegisterPage() {
       setUsernameError(null);
 
       try {
-        const isAvailable = await userService.checkUsernameAvailability(value);
+        const isAvailable = await authService.checkUsernameAvailability(value);
         if (isAvailable) {
           setUsernameStatus('available');
         } else {

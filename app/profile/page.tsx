@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,16 +19,7 @@ import { Navigation } from '@/components/navigation';
 import { authService } from '@/services/auth-service';
 import { userService } from '@/services/user-service';
 import type { User, ProfilePrivacyStatus } from '@/types/user';
-import {
-  LogOut,
-  KeyRound,
-  Mail,
-  Languages,
-  AtSign,
-  Lock,
-  Check,
-  X,
-} from 'lucide-react';
+import { LogOut, KeyRound, Mail, Languages, Lock } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { UpdatePasswordModal } from './modals/update-password-modal';
 import { UpdateEmailModal } from './modals/update-email-modal';
@@ -54,7 +45,6 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [username, setUsername] = useState('');
   const [profilePrivacyStatus, setProfilePrivacyStatus] =
     useState<ProfilePrivacyStatus>('public');
   const [isLoading, setIsLoading] = useState(true);
@@ -63,12 +53,6 @@ export default function ProfilePage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
-  // Username availability check state
-  const [usernameStatus, setUsernameStatus] = useState<
-    'available' | 'taken' | 'checking' | null
-  >(null);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -76,7 +60,6 @@ export default function ProfilePage() {
         setUser(profile);
         setFirstName(profile.firstName);
         setLastName(profile.lastName);
-        setUsername(profile.username || '');
         setProfilePrivacyStatus(profile.profilePrivacyStatus || 'public');
       } catch {
         const cachedUser = authService.getCurrentUser();
@@ -84,7 +67,6 @@ export default function ProfilePage() {
           setUser(cachedUser);
           setFirstName(cachedUser.firstName);
           setLastName(cachedUser.lastName);
-          setUsername(cachedUser.username || '');
           setProfilePrivacyStatus(cachedUser.profilePrivacyStatus || 'public');
         }
       } finally {
@@ -93,52 +75,6 @@ export default function ProfilePage() {
     };
     loadProfile();
   }, []);
-
-  // Debounced username availability check
-  const checkUsername = useCallback(
-    async (value: string) => {
-      if (!value || value.length < 3) {
-        setUsernameStatus(null);
-        setUsernameError(null);
-        return;
-      }
-
-      // Don't check if username hasn't changed from current user's username
-      if (value === user?.username) {
-        setUsernameStatus(null);
-        setUsernameError(null);
-        return;
-      }
-
-      setUsernameStatus('checking');
-      setUsernameError(null);
-
-      try {
-        const isAvailable = await userService.checkUsernameAvailability(value);
-        if (isAvailable) {
-          setUsernameStatus('available');
-        } else {
-          setUsernameStatus('taken');
-          setUsernameError(t('usernameTaken') || 'Username is already taken');
-        }
-      } catch (error) {
-        setUsernameStatus(null);
-        setUsernameError(null);
-      }
-    },
-    [user?.username, t]
-  );
-
-  // Debounced effect for username check
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (username && username !== user?.username) {
-        checkUsername(username);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [username, user?.username, checkUsername]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,17 +85,11 @@ export default function ProfilePage() {
       const updates: {
         firstName: string;
         lastName: string;
-        username?: string;
         profilePrivacyStatus?: ProfilePrivacyStatus;
       } = {
         firstName,
         lastName,
       };
-
-      // Only include username if it has changed and is not empty
-      if (username && username !== user.username) {
-        updates.username = username.toLowerCase().trim();
-      }
 
       // Only include profilePrivacyStatus if it has changed
       if (profilePrivacyStatus !== user.profilePrivacyStatus) {
@@ -168,7 +98,6 @@ export default function ProfilePage() {
 
       const updatedUser = await userService.updateUser(updates);
       setUser(updatedUser);
-      setUsername(updatedUser.username || '');
       setProfilePrivacyStatus(updatedUser.profilePrivacyStatus || 'public');
       showToast({
         title: t('profileUpdated'),
@@ -333,57 +262,6 @@ export default function ProfilePage() {
                     <p className="text-xs text-muted-foreground">
                       {t('emailChangeHint')}
                     </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="username"
-                      className="flex items-center gap-2"
-                    >
-                      <AtSign className="h-4 w-4" />
-                      {t('username')}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={(e) =>
-                          setUsername(
-                            e.target.value
-                              .toLowerCase()
-                              .replace(/[^a-z0-9_]/g, '')
-                          )
-                        }
-                        placeholder={t('usernamePlaceholder')}
-                        className={`bg-input pr-10 transition-colors ${
-                          usernameStatus === 'available'
-                            ? 'border-green-500 focus-visible:ring-green-500'
-                            : usernameStatus === 'taken'
-                              ? 'border-red-500 focus-visible:ring-red-500'
-                              : 'border-border'
-                        }`}
-                      />
-                      {usernameStatus === 'available' && (
-                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
-                      )}
-                      {usernameStatus === 'taken' && (
-                        <X className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />
-                      )}
-                      {usernameStatus === 'checking' && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t('usernameHint')}
-                    </p>
-                    {usernameStatus === 'available' && (
-                      <p className="text-xs text-green-600">
-                        {t('usernameAvailable') || 'Username is available'}
-                      </p>
-                    )}
-                    {usernameError && (
-                      <p className="text-xs text-red-600">{usernameError}</p>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <Label

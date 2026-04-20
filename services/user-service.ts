@@ -102,19 +102,6 @@ class UserService {
     }
   }
 
-  async checkUsernameAvailability(username: string): Promise<boolean> {
-    // Use regular fetch since this is a public endpoint (no auth required)
-    const response = await fetch(
-      `${this.baseUrl}/users/check-username?username=${encodeURIComponent(username)}`
-    );
-    if (!response.ok) {
-      throw new Error('Failed to check username availability');
-    }
-    const result: { available: boolean; username: string } =
-      await response.json();
-    return result.available;
-  }
-
   async checkEmailAvailability(email: string): Promise<boolean> {
     // Use regular fetch since this is a public endpoint (no auth required)
     const response = await fetch(

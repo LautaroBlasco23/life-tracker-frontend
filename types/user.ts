@@ -6,7 +6,6 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  username?: string;
   profilePicUrl?: string;
   thumbnailUrl?: string;
   timezone?: string;
@@ -46,6 +45,5 @@ export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
   timezone?: string;
-  username?: string;
   profilePrivacyStatus?: ProfilePrivacyStatus;
 }
