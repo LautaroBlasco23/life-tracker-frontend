@@ -357,7 +357,11 @@
     "noteSavedDescription": "Your changes have been saved.",
     "draftRestored": "Draft restored",
     "draftRestoredDescription": "Your unsaved changes have been restored.",
-    "back": "Back"
+    "back": "Back",
+    "edit": "Edit",
+    "preview": "Preview",
+    "editNote": "Edit Note",
+    "unsavedChangesPreview": "You have unsaved changes. Are you sure you want to switch to preview mode?"
   },
   "profile": {
     "title": "Profile",

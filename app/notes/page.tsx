@@ -8,11 +8,13 @@ import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { noteService } from '@/services/note-service';
 import type { Note } from '@/types/note';
-import { Plus, Search, FileText, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Search, FileText, Trash2, ArrowLeft } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { DeleteModal } from '@/components/ui/card/delete-modal';
 import { useTranslations } from '@/contexts/language-context';
+import { MarkdownView } from '@/components/notes/markdown-view';
+import { NoteToolbar } from '@/components/notes/note-toolbar';
 
 const DRAFT_STORAGE_KEY = 'notes_draft';
 
@@ -55,6 +57,7 @@ export default function NotesPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const initializedRef = useRef(false);
 
   const loadNotes = useCallback(async (query?: string) => {
@@ -143,6 +146,7 @@ export default function NotesPage() {
     setEditTitle(note.title);
     setEditContent(note.content);
     setHasUnsavedChanges(false);
+    setIsEditing(false);
     saveDraft(null);
   };
 
@@ -155,6 +159,7 @@ export default function NotesPage() {
     setEditTitle('');
     setEditContent('');
     setHasUnsavedChanges(false);
+    setIsEditing(false);
     saveDraft(null);
   };
 
@@ -174,6 +179,7 @@ export default function NotesPage() {
       setEditTitle(newNote.title);
       setEditContent(newNote.content);
       setHasUnsavedChanges(false);
+      setIsEditing(true);
       saveDraft(null);
       showToast({
         title: t('noteCreated'),
@@ -203,6 +209,7 @@ export default function NotesPage() {
         prev.map((note) => (note.id === updatedNote.id ? updatedNote : note))
       );
       setHasUnsavedChanges(false);
+      setIsEditing(false);
       saveDraft(null);
       showToast({
         title: t('noteSaved'),
@@ -225,6 +232,14 @@ export default function NotesPage() {
     setDeleteModalOpen(true);
   };
 
+  const handleToggleMode = () => {
+    if (isEditing && hasUnsavedChanges) {
+      const confirmSwitch = window.confirm(t('unsavedChangesPreview'));
+      if (!confirmSwitch) return;
+    }
+    setIsEditing(!isEditing);
+  };
+
   const handleDeleteNote = async () => {
     if (!noteToDelete) return;
 
@@ -235,6 +250,7 @@ export default function NotesPage() {
       setEditTitle('');
       setEditContent('');
       setHasUnsavedChanges(false);
+      setIsEditing(false);
       saveDraft(null);
     }
     showToast({
@@ -364,22 +380,25 @@ export default function NotesPage() {
                       placeholder={t('titlePlaceholder')}
                       className="flex-1 text-xl font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto"
                     />
-                    <Button
-                      onClick={handleSaveNote}
-                      disabled={!hasUnsavedChanges || isSaving}
-                      size="sm"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {isSaving ? t('saving') : t('save')}
-                    </Button>
+                    <NoteToolbar
+                      isEditing={isEditing}
+                      onToggleMode={handleToggleMode}
+                      onSave={handleSaveNote}
+                      canSave={hasUnsavedChanges}
+                      isSaving={isSaving}
+                    />
                   </div>
                   <div className="flex-1 p-4">
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      placeholder={t('contentPlaceholder')}
-                      className="w-full h-full resize-none border-none shadow-none focus-visible:ring-0 text-base leading-relaxed"
-                    />
+                    {isEditing ? (
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        placeholder={t('contentPlaceholder')}
+                        className="w-full h-full resize-none border-none shadow-none focus-visible:ring-0 text-base leading-relaxed"
+                      />
+                    ) : (
+                      <MarkdownView content={editContent} className="h-full" />
+                    )}
                   </div>
                   <div className="px-4 py-2 border-t border-border text-xs text-muted-foreground">
                     {t('lastEdited', {

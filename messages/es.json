@@ -357,7 +357,11 @@
     "noteSavedDescription": "Tus cambios fueron guardados.",
     "draftRestored": "Borrador restaurado",
     "draftRestoredDescription": "Tus cambios sin guardar fueron restaurados.",
-    "back": "Volver"
+    "back": "Volver",
+    "edit": "Editar",
+    "preview": "Vista previa",
+    "editNote": "Editar nota",
+    "unsavedChangesPreview": "Tenés cambios sin guardar. ¿Seguro que querés cambiar a vista previa?"
   },
   "profile": {
     "title": "Perfil",
