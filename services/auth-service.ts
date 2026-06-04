@@ -277,20 +277,27 @@ class AuthService {
       headers,
     });
 
-    if (response.status === 401 && this.refreshToken) {
-      try {
-        await this.refreshAccessToken();
-        headers['Authorization'] = `Bearer ${this.accessToken}`;
-        response = await fetch(url, {
-          ...options,
-          headers,
-        });
+    if (response.status === 401) {
+      if (this.refreshToken) {
+        try {
+          await this.refreshAccessToken();
+          headers['Authorization'] = `Bearer ${this.accessToken}`;
+          response = await fetch(url, {
+            ...options,
+            headers,
+          });
 
-        if (response.status === 401) {
+          if (response.status === 401) {
+            await this.logout();
+            throw new Error('Session expired');
+          }
+        } catch {
           await this.logout();
+          throw new Error('Session expired');
         }
-      } catch {
+      } else {
         await this.logout();
+        throw new Error('Session expired');
       }
     }
 

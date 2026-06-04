@@ -8,7 +8,14 @@ import { AuthGuard } from '@/components/auth-guard';
 import { Navigation } from '@/components/navigation';
 import { noteService } from '@/services/note-service';
 import type { Note } from '@/types/note';
-import { Plus, Search, FileText, Trash2, ArrowLeft } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  FileText,
+  Trash2,
+  ArrowLeft,
+  Pencil,
+} from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { DeleteModal } from '@/components/ui/card/delete-modal';
@@ -16,32 +23,43 @@ import { useTranslations } from '@/contexts/language-context';
 import { MarkdownView } from '@/components/notes/markdown-view';
 import { NoteToolbar } from '@/components/notes/note-toolbar';
 
-const DRAFT_STORAGE_KEY = 'notes_draft';
+const DRAFT_STORAGE_KEY = 'notes_drafts';
 
-interface NoteDraft {
-  noteId: number;
-  title: string;
-  content: string;
+interface NoteDrafts {
+  [noteId: number]: { title: string; content: string };
 }
 
-function saveDraft(draft: NoteDraft | null): void {
-  if (draft) {
-    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
-  } else {
-    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-  }
-}
-
-function loadDraft(): NoteDraft | null {
-  const stored = sessionStorage.getItem(DRAFT_STORAGE_KEY);
-  if (!stored) return null;
+function getDrafts(): NoteDrafts {
+  const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
+  if (!stored) return {};
 
   try {
-    return JSON.parse(stored) as NoteDraft;
+    return JSON.parse(stored) as NoteDrafts;
   } catch {
-    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-    return null;
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    return {};
   }
+}
+
+function setDrafts(drafts: NoteDrafts): void {
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+}
+
+function saveDraft(noteId: number, title: string, content: string): void {
+  const drafts = getDrafts();
+  drafts[noteId] = { title, content };
+  setDrafts(drafts);
+}
+
+function removeDraft(noteId: number): void {
+  const drafts = getDrafts();
+  delete drafts[noteId];
+  setDrafts(drafts);
+}
+
+function loadDraft(noteId: number): { title: string; content: string } | null {
+  const drafts = getDrafts();
+  return drafts[noteId] ?? null;
 }
 
 export default function NotesPage() {
@@ -87,26 +105,7 @@ export default function NotesPage() {
     initializedRef.current = true;
 
     const initialize = async () => {
-      const userNotes = await loadNotes();
-
-      const draft = loadDraft();
-      if (draft) {
-        const note = userNotes.find((n) => n.id === draft.noteId);
-        if (note) {
-          setSelectedNote(note);
-          setEditTitle(draft.title);
-          setEditContent(draft.content);
-          setHasUnsavedChanges(
-            draft.title !== note.title || draft.content !== note.content
-          );
-          showToast({
-            title: t('draftRestored'),
-            description: t('draftRestoredDescription'),
-          });
-        } else {
-          saveDraft(null);
-        }
-      }
+      await loadNotes();
     };
 
     initialize();
@@ -126,49 +125,39 @@ export default function NotesPage() {
       setHasUnsavedChanges(unsaved);
 
       if (unsaved) {
-        saveDraft({
-          noteId: selectedNote.id,
-          title: editTitle,
-          content: editContent,
-        });
+        saveDraft(selectedNote.id, editTitle, editContent);
       } else {
-        saveDraft(null);
+        removeDraft(selectedNote.id);
       }
     }
   }, [editTitle, editContent, selectedNote]);
 
   const handleSelectNote = (note: Note) => {
-    if (hasUnsavedChanges) {
-      const confirmSwitch = window.confirm(t('unsavedChangesSwitch'));
-      if (!confirmSwitch) return;
+    const draft = loadDraft(note.id);
+    if (draft) {
+      setEditTitle(draft.title);
+      setEditContent(draft.content);
+      setHasUnsavedChanges(
+        draft.title !== note.title || draft.content !== note.content
+      );
+    } else {
+      setEditTitle(note.title);
+      setEditContent(note.content);
+      setHasUnsavedChanges(false);
     }
     setSelectedNote(note);
-    setEditTitle(note.title);
-    setEditContent(note.content);
-    setHasUnsavedChanges(false);
     setIsEditing(false);
-    saveDraft(null);
   };
 
   const handleBackToList = () => {
-    if (hasUnsavedChanges) {
-      const confirmBack = window.confirm(t('unsavedChangesBack'));
-      if (!confirmBack) return;
-    }
     setSelectedNote(null);
     setEditTitle('');
     setEditContent('');
     setHasUnsavedChanges(false);
     setIsEditing(false);
-    saveDraft(null);
   };
 
   const handleCreateNote = async () => {
-    if (hasUnsavedChanges) {
-      const confirmCreate = window.confirm(t('unsavedChangesCreate'));
-      if (!confirmCreate) return;
-    }
-
     try {
       const newNote = await noteService.createNote({
         title: t('untitled'),
@@ -180,7 +169,6 @@ export default function NotesPage() {
       setEditContent(newNote.content);
       setHasUnsavedChanges(false);
       setIsEditing(true);
-      saveDraft(null);
       showToast({
         title: t('noteCreated'),
         description: t('startWriting'),
@@ -210,7 +198,7 @@ export default function NotesPage() {
       );
       setHasUnsavedChanges(false);
       setIsEditing(false);
-      saveDraft(null);
+      removeDraft(selectedNote.id);
       showToast({
         title: t('noteSaved'),
         description: t('noteSavedDescription'),
@@ -233,17 +221,22 @@ export default function NotesPage() {
   };
 
   const handleToggleMode = () => {
-    if (isEditing && hasUnsavedChanges) {
-      const confirmSwitch = window.confirm(t('unsavedChangesPreview'));
-      if (!confirmSwitch) return;
-    }
     setIsEditing(!isEditing);
+  };
+
+  const handleDiscard = () => {
+    if (!selectedNote) return;
+    removeDraft(selectedNote.id);
+    setEditTitle(selectedNote.title);
+    setEditContent(selectedNote.content);
+    setHasUnsavedChanges(false);
   };
 
   const handleDeleteNote = async () => {
     if (!noteToDelete) return;
 
     await noteService.deleteNote(noteToDelete.id);
+    removeDraft(noteToDelete.id);
     setNotes((prev) => prev.filter((note) => note.id !== noteToDelete.id));
     if (selectedNote?.id === noteToDelete.id) {
       setSelectedNote(null);
@@ -251,7 +244,6 @@ export default function NotesPage() {
       setEditContent('');
       setHasUnsavedChanges(false);
       setIsEditing(false);
-      saveDraft(null);
     }
     showToast({
       title: t('noteDeleted'),
@@ -321,8 +313,10 @@ export default function NotesPage() {
                         <button
                           onClick={() => handleSelectNote(note)}
                           className={cn(
-                            'w-full text-left p-3 hover:bg-muted/50 transition-colors',
-                            selectedNote?.id === note.id && 'bg-primary/10'
+                            'w-full text-left p-3 transition-colors cursor-pointer',
+                            selectedNote?.id === note.id
+                              ? 'bg-primary/10'
+                              : 'hover:bg-muted/50'
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -337,15 +331,27 @@ export default function NotesPage() {
                                 {formatDate(note.editedAt)}
                               </p>
                             </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDeleteModal(note);
-                              }}
-                              className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectNote(note);
+                                  setIsEditing(true);
+                                }}
+                                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openDeleteModal(note);
+                                }}
+                                className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </button>
                       </li>
@@ -384,6 +390,7 @@ export default function NotesPage() {
                       isEditing={isEditing}
                       onToggleMode={handleToggleMode}
                       onSave={handleSaveNote}
+                      onDiscard={handleDiscard}
                       canSave={hasUnsavedChanges}
                       isSaving={isSaving}
                     />

@@ -334,9 +334,6 @@
     "noNotesYet": "No notes yet",
     "untitled": "Untitled",
     "noContent": "No content",
-    "unsavedChangesSwitch": "You have unsaved changes. Are you sure you want to switch notes?",
-    "unsavedChangesBack": "You have unsaved changes. Are you sure you want to go back?",
-    "unsavedChangesCreate": "You have unsaved changes. Are you sure you want to create a new note?",
     "noteCreated": "Note created",
     "startWriting": "Start writing your new note.",
     "failedToCreate": "Failed to create note",
@@ -344,6 +341,7 @@
     "contentPlaceholder": "Start writing...",
     "saving": "Saving...",
     "save": "Save",
+    "discard": "Discard",
     "lastEdited": "Last edited: {date}",
     "unsavedChanges": "Unsaved changes",
     "selectNote": "Select a note",
@@ -360,8 +358,7 @@
     "back": "Back",
     "edit": "Edit",
     "preview": "Preview",
-    "editNote": "Edit Note",
-    "unsavedChangesPreview": "You have unsaved changes. Are you sure you want to switch to preview mode?"
+    "editNote": "Edit Note"
   },
   "profile": {
     "title": "Profile",

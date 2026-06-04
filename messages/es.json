@@ -334,9 +334,6 @@
     "noNotesYet": "No hay notas todavía",
     "untitled": "Sin título",
     "noContent": "Sin contenido",
-    "unsavedChangesSwitch": "Tenés cambios sin guardar. ¿Seguro que querés cambiar de nota?",
-    "unsavedChangesBack": "Tenés cambios sin guardar. ¿Seguro que querés volver?",
-    "unsavedChangesCreate": "Tenés cambios sin guardar. ¿Seguro que querés crear una nueva nota?",
     "noteCreated": "Nota creada",
     "startWriting": "Empezá a escribir tu nueva nota.",
     "failedToCreate": "Error al crear la nota",
@@ -344,6 +341,7 @@
     "contentPlaceholder": "Empezá a escribir...",
     "saving": "Guardando...",
     "save": "Guardar",
+    "discard": "Descartar",
     "lastEdited": "Última edición: {date}",
     "unsavedChanges": "Cambios sin guardar",
     "selectNote": "Seleccioná una nota",
@@ -360,8 +358,7 @@
     "back": "Volver",
     "edit": "Editar",
     "preview": "Vista previa",
-    "editNote": "Editar nota",
-    "unsavedChangesPreview": "Tenés cambios sin guardar. ¿Seguro que querés cambiar a vista previa?"
+    "editNote": "Editar nota"
   },
   "profile": {
     "title": "Perfil",
